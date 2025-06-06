@@ -30,8 +30,8 @@ class WebSocketServer
         $this->connections = new ConnectionManager();
         $this->heartbeat   = new Heartbeat($this->server, $this->connections, $this->config['heartbeat_interval'], $this->config['heartbeat_timeout']);
         $this->dispatcher  = new MessageDispatcher($this->server, $this->connections);
-        $this->events();
         $this->subscribeToRedis();
+        $this->events();
     }
 
     public function start(): void
