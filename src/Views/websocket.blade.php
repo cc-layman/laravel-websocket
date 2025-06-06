@@ -35,6 +35,19 @@
     ws.onopen = function () {
         document.getElementById('status').innerText = '连接状态：已连接';
         console.log('WebSocket 已连接');
+
+        setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+                const pingPayload = {
+                    type: 'ping',
+                    to: 0,
+                    from: userid,
+                    content: 'ping'
+                };
+                ws.send(JSON.stringify(pingPayload));
+                console.log('发送ping消息', pingPayload);
+            }
+        }, 3000);
     };
 
     ws.onmessage = function (event) {
