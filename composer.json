@@ -25,5 +25,7 @@
                 "Layman\\LaravelWebsocket\\WebSocketServiceProvider"
             ]
         }
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }
