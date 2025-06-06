@@ -30,8 +30,8 @@ class WebSocketServer
         $this->connections = new ConnectionManager();
         $this->heartbeat   = new Heartbeat($this->server, $this->connections, $this->config['heartbeat_interval'], $this->config['heartbeat_timeout']);
         $this->dispatcher  = new MessageDispatcher($this->server, $this->connections);
-        $this->subscribeToRedis();
         $this->events();
+        // $this->subscribeToRedis();
     }
 
     public function start(): void
@@ -89,25 +89,25 @@ class WebSocketServer
         });
     }
 
-    protected function subscribeToRedis(): void
-    {
-        $config = config('database.redis.default');
-
-        go(function () use ($config) {
-            $redis = new Redis();
-            $redis->connect($config['host'], $config['port']);
-            if (!empty($config['password'])) {
-                $redis->auth($config['password']);
-            }
-
-            // 订阅频道，消息由回调处理
-            $redis->subscribe([$this->config['redis_channel']], function ($data) {
-                $data = json_decode($data, true);
-                if (empty($data) || empty($data['content'])) {
-                    return;
-                }
-                $this->dispatcher->pushSystemMessage($data);
-            });
-        });
-    }
+    // protected function subscribeToRedis(): void
+    // {
+    //     $config = config('database.redis.default');
+    //
+    //     go(function () use ($config) {
+    //         $redis = new Redis();
+    //         $redis->connect($config['host'], $config['port']);
+    //         if (!empty($config['password'])) {
+    //             $redis->auth($config['password']);
+    //         }
+    //
+    //         // 订阅频道，消息由回调处理
+    //         $redis->subscribe([$this->config['redis_channel']], function ($data) {
+    //             $data = json_decode($data, true);
+    //             if (empty($data) || empty($data['content'])) {
+    //                 return;
+    //             }
+    //             $this->dispatcher->pushSystemMessage($data);
+    //         });
+    //     });
+    // }
 }
