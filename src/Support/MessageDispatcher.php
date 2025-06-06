@@ -48,7 +48,7 @@ class MessageDispatcher
         $fd = $this->connections->getFdByUserId($toUserid);
         if ($fd) {
             $message = json_encode([
-                'type' => 'group',
+                'type' => 'private',
                 'from' => $fromUserid,
                 'to' => $toUserid,
                 'content' => $content,
