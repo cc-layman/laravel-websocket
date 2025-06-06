@@ -101,7 +101,7 @@ class WebSocketServer
             }
 
             // 订阅频道，消息由回调处理
-            $redis->subscribe($this->config['redis_channel'], function ($data) {
+            $redis->subscribe([$this->config['redis_channel']], function ($data) {
                 $data = json_decode($data, true);
                 if (empty($data) || empty($data['content'])) {
                     return;
