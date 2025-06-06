@@ -16,7 +16,6 @@
         "php": "^8.0",
         "predis/predis": "*",
         "ext-swoole": "6.*",
-        "laravel/octane": "*",
         "ext-redis": "*"
     },
     "extra": {
