@@ -1,0 +1,29 @@
+{
+    "name": "layman/laravel-websocket",
+    "description": "websocket",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Layman\\LaravelWebsocket\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "layman"
+        }
+    ],
+    "require": {
+        "php": "^8.0",
+        "predis/predis": "*",
+        "ext-swoole": "6.*",
+        "laravel/octane": "*",
+        "ext-redis": "*"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Layman\\LaravelWebsocket\\WebSocketServiceProvider"
+            ]
+        }
+    }
+}
