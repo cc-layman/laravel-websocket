@@ -27,8 +27,8 @@ php artisan websocket:start
 use Illuminate\Support\Facades\Route;
 
 // 测试
-Route::get('/ws', function () {
-    return view('ws');
+Route::get('/websocket', function () {
+    return view('websocket');
 });
 ```
 
