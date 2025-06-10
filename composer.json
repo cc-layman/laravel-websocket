@@ -16,7 +16,8 @@
         "php": "^8.0",
         "predis/predis": "*",
         "ext-swoole": "6.*",
-        "ext-redis": "*"
+        "ext-redis": "*",
+        "workerman/redis": "*"
     },
     "extra": {
         "laravel": {
