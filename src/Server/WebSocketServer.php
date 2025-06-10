@@ -14,7 +14,6 @@ use Layman\LaravelWebsocket\Support\RedisPersistence;
 use Redis;
 use Swoole\Http\Request;
 use Swoole\WebSocket\Server;
-use function Co\run;
 
 class WebSocketServer
 {
@@ -123,30 +122,37 @@ class WebSocketServer
             if ($workerId !== 0) {
                 return;
             }
-
-            $config = config('database.redis.default');
-
-            $redis = new Redis();
-            $redis->connect($config['host'], $config['port']);
-            if (!empty($config['password'])) {
-                $redis->auth($config['password']);
-            }
-            if (!empty($config['database'])) {
-                $redis->select($config['database']);
-            }
-
-            go(function () use ($redis) {
-                try {
-                    $dispatcher = $this->dispatcher;
-                    $redis->subscribe([$this->config['redis_subscribe_channel']], function (Redis $redis, string $channel, string $message) use ($dispatcher) {
-                        $data = json_decode($message, true);
-                        if (empty($data) || empty($data['content'])) {
-                            return;
+            go(function () {
+                $config     = config('database.redis.default');
+                $dispatcher = $this->dispatcher;
+                while (true) {
+                    try {
+                        $redis = new Redis();
+                        $redis->connect($config['host'], $config['port'], 3.0, null, 0, 0, true);
+                        if (!empty($config['password'])) {
+                            $redis->auth($config['password']);
                         }
-                        $dispatcher->pushSystemMessage($data);
-                    });
-                } catch (\Throwable $throwable) {
-                    Log::error('Redis Subscribe Error:', [$throwable->getMessage()]);
+                        if (!empty($config['database'])) {
+                            $redis->select($config['database']);
+                        }
+                        $redis->setOption(Redis::OPT_TCP_KEEPALIVE, 1);
+
+                        $redis->subscribe([$this->config['redis_subscribe_channel']], function (Redis $redis, string $channel, string $message) use ($dispatcher) {
+                            $data = json_decode($message, true);
+                            if (empty($data) || empty($data['content'])) {
+                                return;
+                            }
+                            $dispatcher->pushSystemMessage($data);
+                        });
+
+                        // subscribe 会阻塞，只有断开才会继续执行这里
+                        Log::warning('Redis subscription disconnected, will try to reconnect.');
+
+                    } catch (\Throwable $throwable) {
+                        Log::error('Redis Subscribe Error:', [$throwable->getMessage()]);
+                    }
+
+                    co::sleep(3);
                 }
             });
         });
