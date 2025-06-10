@@ -45,12 +45,16 @@
                     content: 'ping'
                 };
                 ws.send(JSON.stringify(pingPayload));
-                console.log('发送ping消息', pingPayload);
             }
         }, 3000);
     };
 
     ws.onmessage = function (event) {
+        const data = JSON.parse(event.data);
+        // 如果是 pong 消息，则不展示
+        if (data.type === 'pong') {
+            return;
+        }
         const msgList = document.getElementById('messages');
         const item = document.createElement('li');
         item.textContent = event.data;

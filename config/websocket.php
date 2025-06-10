@@ -1,10 +1,47 @@
 <?php
 return [
+    /**
+     * 地址
+     */
     'host' => '127.0.0.1',
+
+    /**
+     * 端口
+     */
     'port' => 9502,
-    'model' => SWOOLE_BASE, // SWOOLE_PROCESS
+
+    /**
+     * 启动类型 SWOOLE_BASE|SWOOLE_PROCESS
+     */
+    'model' => SWOOLE_BASE,
+
+    /**
+     * 启动进程数
+     */
     'worker_num' => 1,
-    'heartbeat_interval' => 3,  // 每 3 秒发送一次 ping
-    'heartbeat_timeout' => 30,  // 超过 30 秒未响应则断开连接
-    'redis_channel' => 'ws:publish',
+
+    /**
+     * 每3秒发送一次 ping
+     */
+    'heartbeat_interval' => 3,
+
+    /**
+     *  超过30秒未响应则断开连接
+     */
+    'heartbeat_timeout' => 30,
+
+    /*
+     * redis消息订阅频道
+     */
+    'redis_subscribe_channel' => 'ws:publish',
+
+    /**
+     * 启用redis离线消息
+     */
+    'redis_persistence' => false,
+
+    /**
+     * 启动数据库离线消息(mysql)
+     */
+    'database_persistence' => false,
 ];

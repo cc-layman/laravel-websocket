@@ -2,9 +2,14 @@
 
 namespace Layman\LaravelWebsocket\Server;
 
+use Illuminate\Support\Facades\Log;
+use Layman\LaravelWebsocket\Models\WebSocketMessage;
 use Layman\LaravelWebsocket\Support\ConnectionManager;
+use Layman\LaravelWebsocket\Support\DatabasePersistence;
 use Layman\LaravelWebsocket\Support\Heartbeat;
 use Layman\LaravelWebsocket\Support\MessageDispatcher;
+use Layman\LaravelWebsocket\Support\MessageFormatter;
+use Layman\LaravelWebsocket\Support\RedisPersistence;
 use Redis;
 use Swoole\Http\Request;
 use Swoole\WebSocket\Server;
@@ -16,6 +21,8 @@ class WebSocketServer
     protected ConnectionManager $connections;
     protected Heartbeat $heartbeat;
     protected MessageDispatcher $dispatcher;
+    protected DatabasePersistence $databasePersistence;
+    protected RedisPersistence $redisPersistence;
     protected array $config;
 
     public function __construct()
@@ -24,14 +31,16 @@ class WebSocketServer
         $this->server = new Server($this->config['host'], $this->config['port'], $this->config['model']);
         if ($this->config['model'] == SWOOLE_PROCESS) {
             $this->server->set([
-                'worker_num' => 4,
+                'worker_num' => $this->config['worker_num'],
             ]);
         }
-        $this->connections = new ConnectionManager();
-        $this->heartbeat   = new Heartbeat($this->server, $this->connections, $this->config['heartbeat_interval'], $this->config['heartbeat_timeout']);
-        $this->dispatcher  = new MessageDispatcher($this->server, $this->connections);
+        $this->connections         = new ConnectionManager();
+        $this->heartbeat           = new Heartbeat($this->server, $this->connections, $this->config['heartbeat_interval'], $this->config['heartbeat_timeout']);
+        $this->dispatcher          = new MessageDispatcher($this->server, $this->connections, $this->config);
+        $this->databasePersistence = new DatabasePersistence();
+        $this->redisPersistence    = new RedisPersistence();
         $this->events();
-        // $this->subscribeToRedis();
+        $this->subscribeToRedis();
     }
 
     public function start(): void
@@ -51,6 +60,23 @@ class WebSocketServer
         $this->server->on('open', function (Server $server, Request $request) {
             $userid = (int)($request->get['userid'] ?? 0);
             if ($userid > 0) {
+                if ($this->config['database_persistence']) {
+                    $offlineMessages = WebSocketMessage::where('to_userid', $userid)
+                        ->where('status', 'UNREAD')
+                        ->get();
+                    foreach ($offlineMessages as $message) {
+                        $message = MessageFormatter::format($message->type, $message->from_userid, $message->to_userid, $message->content);
+                        $server->push($request->fd, json_encode($message, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+                        $this->databasePersistence->remove($message->to_userid);
+                    }
+                }
+                if ($this->config['redis_persistence']) {
+                    $key = $this->redisPersistence->getUserOfflineMessagesKey($userid);
+                    while ($message = \Illuminate\Support\Facades\Redis::lpop($key)) {
+                        $server->push($request->fd, $message);
+                    }
+                }
+
                 $this->connections->add($userid, $request->fd);
                 $this->heartbeat->pong($request->fd);
             } else {
@@ -89,25 +115,32 @@ class WebSocketServer
         });
     }
 
-    // protected function subscribeToRedis(): void
-    // {
-    //     $config = config('database.redis.default');
-    //
-    //     go(function () use ($config) {
-    //         $redis = new Redis();
-    //         $redis->connect($config['host'], $config['port']);
-    //         if (!empty($config['password'])) {
-    //             $redis->auth($config['password']);
-    //         }
-    //
-    //         // 订阅频道，消息由回调处理
-    //         $redis->subscribe([$this->config['redis_channel']], function ($data) {
-    //             $data = json_decode($data, true);
-    //             if (empty($data) || empty($data['content'])) {
-    //                 return;
-    //             }
-    //             $this->dispatcher->pushSystemMessage($data);
-    //         });
-    //     });
-    // }
+    protected function subscribeToRedis(): void
+    {
+        go(function () {
+            try {
+                $config = config('database.redis.default');
+                $redis  = new Redis();
+                $redis->connect($config['host'], $config['port']);
+                if (!empty($config['password'])) {
+                    $redis->auth($config['password']);
+                }
+                if (!empty($config['database'])) {
+                    $redis->select($config['database']);
+                }
+
+                $dispatcher = $this->dispatcher;
+
+                $redis->subscribe([$config['redis_subscribe_channel']], function (Redis $redis, string $channel, string $message) use ($dispatcher) {
+                    $data = json_decode($message, true);
+                    if (empty($data) || empty($data['content'])) {
+                        return;
+                    }
+                    $dispatcher->pushSystemMessage($data);
+                });
+            } catch (\Throwable $throwable) {
+                Log::error('Redis Subscribe Error:', [$throwable->getMessage()]);
+            }
+        });
+    }
 }

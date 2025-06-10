@@ -10,12 +10,23 @@ class ConnectionManager
     protected string $userToFdKey = 'ws:user_to_fd';
     protected string $fdToUserKey = 'ws:fd_to_user';
 
-    public function add(int $userid, int $fd): void
+    /**
+     * 设置用户与连接关系
+     * @param int|string $userid
+     * @param int $fd
+     * @return void
+     */
+    public function add(int|string $userid, int $fd): void
     {
         Redis::hset($this->userToFdKey, $userid, $fd);
         Redis::hset($this->fdToUserKey, $fd, $userid);
     }
 
+    /**
+     * 删除用户与连接关系
+     * @param int $fd
+     * @return void
+     */
     public function remove(int $fd): void
     {
         $userid = Redis::hget($this->fdToUserKey, $fd);
@@ -25,12 +36,22 @@ class ConnectionManager
         }
     }
 
-    public function getFdByUserId(int $userid): ?int
+    /**
+     * 使用用户标识获取连接fd
+     * @param int|string $userid
+     * @return int|null
+     */
+    public function getFdByUserId(int|string $userid): ?int
     {
         $fd = Redis::hget($this->userToFdKey, $userid);
         return $fd !== null ? (int)$fd : null;
     }
 
+    /**
+     * 使用连接fd获取用户标识
+     * @param int $fd
+     * @return int|null
+     */
     public function getUserIdByFd(int $fd): ?int
     {
         $userid = Redis::hget($this->fdToUserKey, $fd);
@@ -38,7 +59,7 @@ class ConnectionManager
     }
 
     /**
-     * 获取所有连接 fd
+     * 获取所有连接fd
      * @return int[]
      */
     public function getAllFds(): array

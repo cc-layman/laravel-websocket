@@ -2,24 +2,31 @@
 
 namespace Layman\LaravelWebsocket\Support;
 
+use Illuminate\Support\Facades\Config;
 use Swoole\WebSocket\Server;
 
 class MessageDispatcher
 {
     protected Server $server;
     protected ConnectionManager $connections;
+    protected Config $config;
+    protected RedisPersistence $redisPersistence;
+    protected DatabasePersistence $databasePersistence;
 
-    public function __construct(Server $server, ConnectionManager $connections)
+    public function __construct(Server $server, ConnectionManager $connections, Config $config)
     {
-        $this->server      = $server;
-        $this->connections = $connections;
+        $this->server              = $server;
+        $this->connections         = $connections;
+        $this->config              = $config;
+        $this->redisPersistence    = new RedisPersistence();
+        $this->databasePersistence = new DatabasePersistence();
     }
 
     /**
-     * 处理收到客户端消息
-     * 例子消息格式：
-     *  点对点: {"type":"private","to":123,"content":"hello"}
-     *  群聊: {"type":"group","groups":1,"content":"hi all"}
+     * 处理客户端消息
+     * @param int $fd
+     * @param array $data
+     * @return void
      */
     public function handle(int $fd, array $data): void
     {
@@ -31,89 +38,93 @@ class MessageDispatcher
 
         switch ($data['type'] ?? '') {
             case 'private':
-                $this->sendPrivateMessage($userid, $data['to'], $data['content'] ?? '');
+                $this->privateMessage($userid, $data['to'], $data['content'] ?? '');
                 break;
 
             case 'group':
-                $this->sendGroupMessage($userid, $data['groups'], $data['content'] ?? '');
+                $this->groupMessage($userid, $data['groups'], $data['content'] ?? '');
                 break;
             default:
-                // 其他类型消息，忽略或扩展
+                // Other types of messages, ignore or expand
                 break;
-        }
-    }
-
-    protected function sendPrivateMessage(int $fromUserid, int $toUserid, string $content): void
-    {
-        $fd = $this->connections->getFdByUserId($toUserid);
-        if ($fd) {
-            $message = json_encode([
-                'type' => 'private',
-                'from' => $fromUserid,
-                'to' => $toUserid,
-                'content' => $content,
-            ]);
-            $this->server->push($fd, $message);
-        }
-    }
-
-    protected function sendGroupMessage(int $fromUserid, array $groups, string $content): void
-    {
-        foreach ($groups as $toUserid) {
-            $fd      = $this->connections->getFdByUserId($toUserid);
-            $message = json_encode([
-                'type' => 'group',
-                'from' => $fromUserid,
-                'groups' => $toUserid,
-                'content' => $content,
-            ]);
-            $this->server->push($fd, $message);
         }
     }
 
     /**
-     * 通过 Redis 订阅收到系统消息推送到用户或群
-     * 格式示例：
-     * 个人消息: ['type' => 'system', 'toUserid' => 123, 'content' => '系统通知']
-     * 群消息: ['type' => 'system', 'toGroups' => 1, 'content' => '群通知']
-     * 广播所有连接: ['type' => 'system', 'toSystem' => true, 'content' => '广播所有连接']
+     * 私聊消息
+     * @param int|string $fromUserid
+     * @param int|string $toUserid
+     * @param string $content
+     * @return void
+     */
+    protected function privateMessage(int|string $fromUserid, int|string $toUserid, string $content): void
+    {
+        $fd   = $this->connections->getFdByUserId($toUserid);
+        $data = MessageFormatter::format('private', $fromUserid, $toUserid, $content);
+        $this->sendMessage($fd, $data);
+    }
+
+    /**
+     * 群聊消息
+     * @param int|string $fromUserid
+     * @param array $groups
+     * @param string $content
+     * @return void
+     */
+    protected function groupMessage(int|string $fromUserid, array $groups, string $content): void
+    {
+        foreach ($groups as $toUserid) {
+            $fd   = $this->connections->getFdByUserId($toUserid);
+            $data = MessageFormatter::format('group', $fromUserid, $toUserid, $content);
+            $this->sendMessage($fd, $data);
+        }
+    }
+
+    /**
+     * 消息订阅
+     * @param array $data
+     * @return void
      */
     public function pushSystemMessage(array $data): void
     {
         if (isset($data['toUserid'])) {
-            // 广播给指定连接
-            $fd = $this->connections->getFdByUserId((int)$data['toUserid']);
-            if ($fd) {
-                $message = json_encode([
-                    'type' => 'system',
-                    'from' => 'system',
-                    'to' => $data['toUserid'],
-                    'content' => $data['content'],
-                ]);
-                $this->server->push($fd, $message);
-            }
+            $fd   = $this->connections->getFdByUserId($data['toUserid']);
+            $data = MessageFormatter::format($data['type'], $data['type'], $data['toUserid'], $data['content']);
+            $this->sendMessage($fd, $data);
         } elseif (isset($data['toGroups'])) {
-            // 广播给指定群组
             foreach ($data['toGroups'] as $toUserid) {
-                $fd  = $this->connections->getFdByUserId($toUserid);
-                $msg = json_encode([
-                    'type' => 'system',
-                    'from' => 'system',
-                    'to' => $toUserid,
-                    'content' => $data['content'],
-                ]);
-                $this->server->push($fd, $msg);
+                $fd   = $this->connections->getFdByUserId($toUserid);
+                $data = MessageFormatter::format($data['type'], $data['type'], $data['toUserid'], $data['content']);
+                $this->sendMessage($fd, $data);
             }
         } elseif (isset($data['toSystem'])) {
-            // 广播给所有连接的客户端
             foreach ($this->connections->getAllFds() as $fd) {
-                $message = json_encode([
-                    'type' => 'system',
-                    'from' => 'system',
-                    'content' => $data['content'],
-                ]);
-                $this->server->push($fd, $message);
+                $userid = $this->connections->getUserIdByFd($fd);
+                $data   = MessageFormatter::format($data['type'], $data['type'], $userid, $data['content']);
+                $this->sendMessage($fd, $data);
             }
+        }
+    }
+
+    /**
+     * 发送消息
+     * @param int|null $fd
+     * @param array $data
+     * @return void
+     */
+    private function sendMessage(int|null $fd, array $data): void
+    {
+        $message = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($this->config['redis_persistence']) {
+            $this->redisPersistence->add($data['to'], $message);
+        }
+        if ($this->config['database_persistence']) {
+            $this->databasePersistence->add($data);
+        }
+        if ($fd) {
+            $this->server->push($fd, $message);
+            $this->redisPersistence->remove($data['to']);
+            $this->databasePersistence->remove($data['to']);
         }
     }
 }
