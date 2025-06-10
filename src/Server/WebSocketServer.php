@@ -128,7 +128,7 @@ class WebSocketServer
                 while (true) {
                     try {
                         $redis = new Redis();
-                        $redis->connect($config['host'], $config['port'], 3.0, null, 0, 0, true);
+                        $redis->pconnect($config['host'], $config['port'], 3.0);
                         if (!empty($config['password'])) {
                             $redis->auth($config['password']);
                         }
