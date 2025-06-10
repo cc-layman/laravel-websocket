@@ -9,11 +9,11 @@ class MessageDispatcher
 {
     protected Server $server;
     protected ConnectionManager $connections;
-    protected Config $config;
+    protected array $config;
     protected RedisPersistence $redisPersistence;
     protected DatabasePersistence $databasePersistence;
 
-    public function __construct(Server $server, ConnectionManager $connections, Config $config)
+    public function __construct(Server $server, ConnectionManager $connections, array $config)
     {
         $this->server              = $server;
         $this->connections         = $connections;
