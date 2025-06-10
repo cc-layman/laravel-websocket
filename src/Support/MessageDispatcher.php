@@ -37,11 +37,11 @@ class MessageDispatcher
 
         switch ($data['type'] ?? '') {
             case 'private':
-                $this->privateMessage($userid, $data['to'], $data['content'] ?? '');
+                $this->privateMessage($userid, $data['to'], $data['content'] ?? '', $data['extra'] ?? null);
                 break;
 
             case 'group':
-                $this->groupMessage($userid, $data['groups'], $data['content'] ?? '');
+                $this->groupMessage($userid, $data['to'], $data['content'] ?? '', $data['extra'] ?? null);
                 break;
             default:
                 // Other types of messages, ignore or expand
@@ -56,10 +56,10 @@ class MessageDispatcher
      * @param string $content
      * @return void
      */
-    protected function privateMessage(int|string $fromUserid, int|string $toUserid, string $content): void
+    protected function privateMessage(int|string $fromUserid, int|string $toUserid, string $content, null|array $extra): void
     {
         $fd   = $this->connections->getFdByUserId($toUserid);
-        $data = MessageFormatter::format('private', $fromUserid, $toUserid, $content);
+        $data = MessageFormatter::format('private', $fromUserid, $toUserid, $content, $extra);
         $this->sendMessage($fd, $data);
     }
 
@@ -70,11 +70,11 @@ class MessageDispatcher
      * @param string $content
      * @return void
      */
-    protected function groupMessage(int|string $fromUserid, array $groups, string $content): void
+    protected function groupMessage(int|string $fromUserid, array $groups, string $content, null|array $extra): void
     {
         foreach ($groups as $toUserid) {
             $fd   = $this->connections->getFdByUserId($toUserid);
-            $data = MessageFormatter::format('group', $fromUserid, $toUserid, $content);
+            $data = MessageFormatter::format('group', $fromUserid, $toUserid, $content, $extra);
             $this->sendMessage($fd, $data);
         }
     }
@@ -86,22 +86,29 @@ class MessageDispatcher
      */
     public function pushSystemMessage(array $data): void
     {
-        if (isset($data['toUserid'])) {
-            $fd   = $this->connections->getFdByUserId($data['toUserid']);
-            $data = MessageFormatter::format($data['type'], $data['type'], $data['toUserid'], $data['content']);
-            $this->sendMessage($fd, $data);
-        } elseif (isset($data['toGroups'])) {
-            foreach ($data['toGroups'] as $toUserid) {
-                $fd   = $this->connections->getFdByUserId($toUserid);
-                $data = MessageFormatter::format($data['type'], $data['type'], $data['toUserid'], $data['content']);
+        switch ($data['type'] ?? '') {
+            case 'toUser':
+                $fd   = $this->connections->getFdByUserId($data['toUserid']);
+                $data = MessageFormatter::format($data['type'], $data['from'], $data['to'], $data['content'], $data['extra'] ?? null);
                 $this->sendMessage($fd, $data);
-            }
-        } elseif (isset($data['toSystem'])) {
-            foreach ($this->connections->getAllFds() as $fd) {
-                $userid = $this->connections->getUserIdByFd($fd);
-                $data   = MessageFormatter::format($data['type'], $data['type'], $userid, $data['content']);
-                $this->sendMessage($fd, $data);
-            }
+                break;
+            case 'toGroups':
+                foreach ($data['to'] as $toUserid) {
+                    $fd   = $this->connections->getFdByUserId($toUserid);
+                    $data = MessageFormatter::format($data['type'], $data['from'], $toUserid, $data['content'], $data['extra'] ?? null);
+                    $this->sendMessage($fd, $data);
+                }
+                break;
+            case 'toOnline':
+                foreach ($this->connections->getAllFds() as $fd) {
+                    $toUserid = $this->connections->getUserIdByFd($fd);
+                    $data     = MessageFormatter::format($data['type'], $data['from'], $toUserid, $data['content'], $data['extra'] ?? null);
+                    $this->sendMessage($fd, $data);
+                }
+                break;
+            default:
+                break;
+
         }
     }
 

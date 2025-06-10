@@ -18,6 +18,7 @@ class DatabasePersistence
             'from_userid' => $data['from'],
             'to_userid' => $data['to'],
             'content' => $data['content'],
+            'extra' => is_null($data['extra']) ? null : json_encode($data['extra']),
         ]);
     }
 

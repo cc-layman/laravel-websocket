@@ -30,6 +30,20 @@ use Illuminate\Support\Facades\Route;
 Route::get('/websocket', function () {
     return view('websocket');
 });
+
+// 数据格式
+json_encode([
+    // {私聊：private}{群聊：group}  消息订阅：{广播个人：toUser}{广播群组：toGroups}{广播现在线所有连接：toOnline}
+    'type' => 'system',
+    // 发送者
+    'from' => 'toGroups', 
+    // 收到者
+    'to' => 'toGroups',
+    // 消息内容
+    'content' => '数据格式',
+    // 扩展内容
+    'extra' => null|array,
+]);
 ```
 
 ## 🙌 支持与贡献
