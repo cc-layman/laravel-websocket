@@ -19,7 +19,7 @@ class WebSocketCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'websocket server start';
 
     /**
      * Execute the console command.

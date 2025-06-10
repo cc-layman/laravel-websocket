@@ -11,9 +11,9 @@ return [
     'port' => 9502,
 
     /**
-     * 启动类型 SWOOLE_BASE|SWOOLE_PROCESS
+     * 启动类型 SWOOLE_BASE = 1|SWOOLE_PROCESS = 2
      */
-    'model' => SWOOLE_BASE,
+    'model' => 1,
 
     /**
      * 启动进程数

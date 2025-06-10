@@ -40,7 +40,6 @@ class WebSocketServer
         $this->databasePersistence = new DatabasePersistence();
         $this->redisPersistence    = new RedisPersistence();
         $this->events();
-        $this->subscribeToRedis();
     }
 
     public function start(): void
@@ -53,6 +52,7 @@ class WebSocketServer
         $this->open();
         $this->message();
         $this->close();
+        $this->subscribeToRedis();
     }
 
     protected function open(): void
@@ -117,30 +117,35 @@ class WebSocketServer
 
     protected function subscribeToRedis(): void
     {
-        go(function () {
-            try {
-                $config = config('database.redis.default');
-                $redis  = new Redis();
-                $redis->connect($config['host'], $config['port']);
-                if (!empty($config['password'])) {
-                    $redis->auth($config['password']);
-                }
-                if (!empty($config['database'])) {
-                    $redis->select($config['database']);
-                }
-
-                $dispatcher = $this->dispatcher;
-
-                $redis->subscribe([$config['redis_subscribe_channel']], function (Redis $redis, string $channel, string $message) use ($dispatcher) {
-                    $data = json_decode($message, true);
-                    if (empty($data) || empty($data['content'])) {
-                        return;
-                    }
-                    $dispatcher->pushSystemMessage($data);
-                });
-            } catch (\Throwable $throwable) {
-                Log::error('Redis Subscribe Error:', [$throwable->getMessage()]);
+        $this->server->on('workerStart', function (Server $server, int $workerId) {
+            if ($workerId !== 0) {
+                return;
             }
+            go(function () {
+                try {
+                    $config = config('database.redis.default');
+                    $redis  = new Redis();
+                    $redis->connect($config['host'], $config['port']);
+                    if (!empty($config['password'])) {
+                        $redis->auth($config['password']);
+                    }
+                    if (!empty($config['database'])) {
+                        $redis->select($config['database']);
+                    }
+
+                    $dispatcher = $this->dispatcher;
+
+                    $redis->subscribe([$config['redis_subscribe_channel']], function (Redis $redis, string $channel, string $message) use ($dispatcher) {
+                        $data = json_decode($message, true);
+                        if (empty($data) || empty($data['content'])) {
+                            return;
+                        }
+                        $dispatcher->pushSystemMessage($data);
+                    });
+                } catch (\Throwable $throwable) {
+                    Log::error('Redis Subscribe Error:', [$throwable->getMessage()]);
+                }
+            });
         });
     }
 }
