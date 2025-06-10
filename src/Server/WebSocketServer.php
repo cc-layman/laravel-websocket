@@ -14,7 +14,6 @@ use Layman\LaravelWebsocket\Support\MessageFormatter;
 use Layman\LaravelWebsocket\Support\RedisPersistence;
 use Swoole\Http\Request;
 use Swoole\WebSocket\Server;
-use Workerman\Redis\Client;
 
 class WebSocketServer
 {
@@ -125,7 +124,7 @@ class WebSocketServer
                 $dispatcher = $this->dispatcher;
                 while (true) {
                     try {
-                        Redis::subscribe([$this->config['redis_subscribe_channel']], function (Client $redis, string $channel, string $message) use ($dispatcher) {
+                        Redis::subscribe([$this->config['redis_subscribe_channel']], function (Redis $redis, string $channel, string $message) use ($dispatcher) {
                             $data = json_decode($message, true);
                             if (empty($data) || empty($data['content'])) {
                                 return;
