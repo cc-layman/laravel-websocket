@@ -4,7 +4,6 @@ namespace Layman\LaravelWebsocket\Server;
 
 use co;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redis;
 use Layman\LaravelWebsocket\Models\WebSocketMessage;
 use Layman\LaravelWebsocket\Support\ConnectionManager;
 use Layman\LaravelWebsocket\Support\DatabasePersistence;
@@ -12,6 +11,7 @@ use Layman\LaravelWebsocket\Support\Heartbeat;
 use Layman\LaravelWebsocket\Support\MessageDispatcher;
 use Layman\LaravelWebsocket\Support\MessageFormatter;
 use Layman\LaravelWebsocket\Support\RedisPersistence;
+use Redis;
 use Swoole\Http\Request;
 use Swoole\WebSocket\Server;
 
@@ -121,10 +121,19 @@ class WebSocketServer
         Co::set(['hook_flags' => SWOOLE_HOOK_TCP]);
         Co\run(function () {
             go(function () {
+                $config     = config('database.redis.default');
                 $dispatcher = $this->dispatcher;
                 while (true) {
                     try {
-                        Redis::subscribe([$this->config['redis_subscribe_channel']], function (string $channel, string $message) use ($dispatcher) {
+                        $redis = new Redis();
+                        $redis->connect($config['host'], $config['port'], 3.0);
+                        if (!empty($config['password'])) {
+                            $redis->auth($config['password']);
+                        }
+                        if (!empty($config['database'])) {
+                            $redis->select($config['database']);
+                        }
+                        $redis->subscribe([$this->config['redis_subscribe_channel']], function (Redis $redis, string $channel, string $message) use ($dispatcher) {
                             $data = json_decode($message, true);
                             if (empty($data) || empty($data['content'])) {
                                 return;
