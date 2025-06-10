@@ -2,7 +2,7 @@
 
 namespace Layman\LaravelWebsocket\Support;
 
-use App\Models\WebSocketMessage;
+use Layman\LaravelWebsocket\Models\WebSocketMessage;
 
 class DatabasePersistence
 {

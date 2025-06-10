@@ -122,8 +122,12 @@ class MessageDispatcher
         }
         if ($fd) {
             $this->server->push($fd, $message);
-            $this->redisPersistence->remove($data['to']);
-            $this->databasePersistence->remove($data['to']);
+            if ($this->config['redis_persistence']) {
+                $this->redisPersistence->remove($data['to']);
+            }
+            if ($this->config['database_persistence']) {
+                $this->databasePersistence->remove($data['to']);
+            }
         }
     }
 }
