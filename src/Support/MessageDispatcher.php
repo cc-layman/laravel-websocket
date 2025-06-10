@@ -2,7 +2,6 @@
 
 namespace Layman\LaravelWebsocket\Support;
 
-use Illuminate\Support\Facades\Config;
 use Swoole\WebSocket\Server;
 
 class MessageDispatcher
