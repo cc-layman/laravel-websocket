@@ -2,7 +2,9 @@
 
 namespace Layman\LaravelWebsocket\Server;
 
+use co;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 use Layman\LaravelWebsocket\Models\WebSocketMessage;
 use Layman\LaravelWebsocket\Support\ConnectionManager;
 use Layman\LaravelWebsocket\Support\DatabasePersistence;
@@ -13,7 +15,6 @@ use Layman\LaravelWebsocket\Support\RedisPersistence;
 use Swoole\Http\Request;
 use Swoole\WebSocket\Server;
 use Workerman\Redis\Client;
-use Swoole\Coroutine;
 
 class WebSocketServer
 {
@@ -118,32 +119,25 @@ class WebSocketServer
 
     protected function subscribeToRedis(): void
     {
-        Coroutine\run(function () {
-            $config     = config('database.redis.default');
-            $dispatcher = $this->dispatcher;
-            while (true) {
-                try {
-                    $redis = new Client("redis://{$config['host']}:{$config['port']}");
-                    if (!empty($config['password'])) {
-                        $redis->auth($config['password']);
+        Co::set(['hook_flags' => SWOOLE_HOOK_TCP]);
+        Co\run(function () {
+            go(function () {
+                $dispatcher = $this->dispatcher;
+                while (true) {
+                    try {
+                        Redis::subscribe([$this->config['redis_subscribe_channel']], function (Client $redis, string $channel, string $message) use ($dispatcher) {
+                            $data = json_decode($message, true);
+                            if (empty($data) || empty($data['content'])) {
+                                return;
+                            }
+                            $dispatcher->pushSystemMessage($data);
+                        });
+                    } catch (\Throwable $e) {
+                        Log::error('Redis subscribe error: ' . $e->getMessage());
+                        Co::sleep(3);
                     }
-                    if (!empty($config['database'])) {
-                        $redis->select($config['database']);
-                    }
-
-                    $redis->subscribe([$this->config['redis_subscribe_channel']], function (Client $redis, string $channel, string $message) use ($dispatcher) {
-                        $data = json_decode($message, true);
-                        if (empty($data) || empty($data['content'])) {
-                            return;
-                        }
-                        $dispatcher->pushSystemMessage($data);
-                    });
-
-                } catch (\Throwable $throwable) {
-                    Log::error('Redis subscribe error: ', [$throwable->getMessage()]);
                 }
-                Coroutine::sleep(3);
-            }
+            });
         });
     }
 }
