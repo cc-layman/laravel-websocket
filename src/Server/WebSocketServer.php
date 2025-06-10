@@ -121,10 +121,11 @@ class WebSocketServer
         Co::set(['hook_flags' => SWOOLE_HOOK_TCP]);
         Co\run(function () {
             go(function () {
+                $redis      = new Redis();
                 $dispatcher = $this->dispatcher;
                 while (true) {
                     try {
-                        Redis::subscribe([$this->config['redis_subscribe_channel']], function (Redis $redis, string $channel, string $message) use ($dispatcher) {
+                        $redis->subscribe([$this->config['redis_subscribe_channel']], function (Redis $redis, string $channel, string $message) use ($dispatcher) {
                             $data = json_decode($message, true);
                             if (empty($data) || empty($data['content'])) {
                                 return;
