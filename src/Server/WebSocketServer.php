@@ -122,9 +122,10 @@ class WebSocketServer
     protected function subscribeToRedis(): void
     {
         $dispatcher = $this->dispatcher;
+        $config     = $this->config;
         Co::set(['hook_flags' => SWOOLE_HOOK_TCP]);
-        Co\run(function () use ($dispatcher) {
-            go(function () use ($dispatcher) {
+        Co\run(function () use ($config, $dispatcher) {
+            go(function () use ($config, $dispatcher) {
                 while (true) {
                     try {
                         $client = new Client([
@@ -132,8 +133,8 @@ class WebSocketServer
                             'protocol' => 3,
                         ]);
 
-                        $push = $client->push(static function (ClientInterface $client) {
-                            $client->subscribe($this->config['redis_subscribe_channel']);
+                        $push = $client->push(static function (ClientInterface $client) use ($config) {
+                            $client->subscribe($config['redis_subscribe_channel']);
                         });
                         foreach ($push as $notification) {
                             var_dump($notification);
