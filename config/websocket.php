@@ -33,7 +33,7 @@ return [
     /*
      * redis消息订阅频道
      */
-    'redis_subscribe_channel' => 'ws:publish',
+    'redis_subscribe_channel' => 'redis_subscribe_channel',
 
     /**
      * 启用redis离线消息

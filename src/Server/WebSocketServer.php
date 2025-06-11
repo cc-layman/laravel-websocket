@@ -2,6 +2,9 @@
 
 namespace Layman\LaravelWebsocket\Server;
 
+use co;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 use Layman\LaravelWebsocket\Models\WebSocketMessage;
 use Layman\LaravelWebsocket\Support\ConnectionManager;
 use Layman\LaravelWebsocket\Support\DatabasePersistence;
@@ -9,6 +12,9 @@ use Layman\LaravelWebsocket\Support\Heartbeat;
 use Layman\LaravelWebsocket\Support\MessageDispatcher;
 use Layman\LaravelWebsocket\Support\MessageFormatter;
 use Layman\LaravelWebsocket\Support\RedisPersistence;
+use Predis\Client;
+use Predis\ClientInterface;
+use Predis\Consumer\Push\PushResponseInterface;
 use Swoole\Http\Request;
 use Swoole\WebSocket\Server;
 
@@ -115,6 +121,34 @@ class WebSocketServer
 
     protected function subscribeToRedis(): void
     {
+        Co::set(['hook_flags' => SWOOLE_HOOK_TCP]);
+        Co\run(function () {
+            while (true) {
+                try {
+                    $client = new Client([
+                        'read_write_timeout' => 0,
+                        'protocol' => 3,
+                    ]);
 
+                    $push = $client->push(static function (ClientInterface $client) {
+                        $client->subscribe($this->config['redis_subscribe_channel']);
+                    });
+                    foreach ($push as $notification) {
+                        var_dump($notification);
+                        if ((null !== $notification) && $notification->getDataType() === PushResponseInterface::MESSAGE_DATA_TYPE) {
+                            $message = $notification[2];
+                            $data    = json_decode($message, true);
+                            if (empty($data) || empty($data['content'])) {
+                                return;
+                            }
+                            $this->dispatcher->pushSystemMessage($data);
+                        }
+                    }
+                } catch (\Throwable $throwable) {
+                    Log::error('redis-消息订阅异常：', [$throwable->getMessage()]);
+                    Co::sleep(3);
+                }
+            }
+        });
     }
 }
