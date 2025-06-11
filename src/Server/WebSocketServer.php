@@ -121,34 +121,37 @@ class WebSocketServer
 
     protected function subscribeToRedis(): void
     {
+        $dispatcher = $this->dispatcher;
         Co::set(['hook_flags' => SWOOLE_HOOK_TCP]);
-        Co\run(function () {
-            while (true) {
-                try {
-                    $client = new Client([
-                        'read_write_timeout' => 0,
-                        'protocol' => 3,
-                    ]);
+        Co\run(function () use ($dispatcher) {
+            go(function () use ($dispatcher) {
+                while (true) {
+                    try {
+                        $client = new Client([
+                            'read_write_timeout' => 0,
+                            'protocol' => 3,
+                        ]);
 
-                    $push = $client->push(static function (ClientInterface $client) {
-                        $client->subscribe($this->config['redis_subscribe_channel']);
-                    });
-                    foreach ($push as $notification) {
-                        var_dump($notification);
-                        if ((null !== $notification) && $notification->getDataType() === PushResponseInterface::MESSAGE_DATA_TYPE) {
-                            $message = $notification[2];
-                            $data    = json_decode($message, true);
-                            if (empty($data) || empty($data['content'])) {
-                                return;
+                        $push = $client->push(static function (ClientInterface $client) {
+                            $client->subscribe($this->config['redis_subscribe_channel']);
+                        });
+                        foreach ($push as $notification) {
+                            var_dump($notification);
+                            if ((null !== $notification) && $notification->getDataType() === PushResponseInterface::MESSAGE_DATA_TYPE) {
+                                $message = $notification[2];
+                                $data    = json_decode($message, true);
+                                if (empty($data) || empty($data['content'])) {
+                                    return;
+                                }
+                                $dispatcher->pushSystemMessage($data);
                             }
-                            $this->dispatcher->pushSystemMessage($data);
                         }
+                    } catch (\Throwable $throwable) {
+                        Log::error('redis-消息订阅异常：', [$throwable->getMessage()]);
+                        Co::sleep(3);
                     }
-                } catch (\Throwable $throwable) {
-                    Log::error('redis-消息订阅异常：', [$throwable->getMessage()]);
-                    Co::sleep(3);
                 }
-            }
+            });
         });
     }
 }
