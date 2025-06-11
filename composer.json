@@ -13,11 +13,10 @@
         }
     ],
     "require": {
-        "php": "^8.0",
+        "php": "^8.1",
         "predis/predis": "*",
         "ext-swoole": "6.*",
-        "ext-redis": "*",
-        "workerman/redis": "*"
+        "ext-redis": "*"
     },
     "extra": {
         "laravel": {

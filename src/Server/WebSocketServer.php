@@ -2,7 +2,6 @@
 
 namespace Layman\LaravelWebsocket\Server;
 
-use Illuminate\Support\Facades\Log;
 use Layman\LaravelWebsocket\Models\WebSocketMessage;
 use Layman\LaravelWebsocket\Support\ConnectionManager;
 use Layman\LaravelWebsocket\Support\DatabasePersistence;
@@ -10,8 +9,6 @@ use Layman\LaravelWebsocket\Support\Heartbeat;
 use Layman\LaravelWebsocket\Support\MessageDispatcher;
 use Layman\LaravelWebsocket\Support\MessageFormatter;
 use Layman\LaravelWebsocket\Support\RedisPersistence;
-use Predis\Client;
-use Swoole\Coroutine;
 use Swoole\Http\Request;
 use Swoole\WebSocket\Server;
 
@@ -118,38 +115,6 @@ class WebSocketServer
 
     protected function subscribeToRedis(): void
     {
-        Coroutine::set(['hook_flags' => SWOOLE_HOOK_ALL]);
-        Coroutine\run(function () {
-            go(function () {
-                $config     = config('database.redis.default');
-                $dispatcher = $this->dispatcher;
-                while (true) {
-                    try {
-                        $redis  = new Client([
-                            'scheme' => 'tcp',
-                            'host' => $config['host'],
-                            'port' => $config['port'],
-                            'password' => $config['password'] ?? null,
-                            'database' => $config['database'] ?? 0,
-                            'timeout' => 5,
-                        ]);
-                        $pubSub = $redis->pubSubLoop();
-                        $pubSub->subscribe($this->config['redis_subscribe_channel']);
-                        foreach ($pubSub as $message) {
-                            if ($message->kind === 'message') {
-                                $data = json_decode($message->payload, true);
-                                if (!empty($data['content'])) {
-                                    $dispatcher->pushSystemMessage($data);
-                                }
-                            }
-                        }
 
-                    } catch (\Throwable $throwable) {
-                        Log::error('Redis subscribe error: ', [$throwable->getMessage()]);
-                        Coroutine::sleep(3);
-                    }
-                }
-            });
-        });
     }
 }
