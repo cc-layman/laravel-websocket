@@ -17,6 +17,9 @@
         "predis/predis": "*",
         "ext-swoole": "4.8.*"
     },
+    "require-dev": {
+        "swoole/ide-helper": "^4.8"
+    },
     "extra": {
         "laravel": {
             "providers": [

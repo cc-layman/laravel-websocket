@@ -86,19 +86,19 @@ class MessageDispatcher
     public function pushSystemMessage(array $data): void
     {
         switch ($data['type'] ?? '') {
-            case 'toUser':
+            case 'notice':
                 $fd   = $this->connections->getFdByUserId($data['to']);
                 $data = Utils::format($data['type'], $data['from'], $data['to'], $data['content'], $data['extra'] ?? null);
                 $this->sendMessage($fd, $data);
                 break;
-            case 'toGroups':
+            case 'broadcast':
                 foreach ($data['to'] as $toUserid) {
                     $fd   = $this->connections->getFdByUserId($toUserid);
                     $data = Utils::format($data['type'], $data['from'], $toUserid, $data['content'], $data['extra'] ?? null);
                     $this->sendMessage($fd, $data);
                 }
                 break;
-            case 'toOnline':
+            case 'online':
                 foreach ($this->connections->getAllFds() as $fd) {
                     $toUserid = $this->connections->getUserIdByFd($fd);
                     $data     = Utils::format($data['type'], $data['from'], $toUserid, $data['content'], $data['extra'] ?? null);
@@ -131,6 +131,9 @@ class MessageDispatcher
             $this->server->push($fd, $message);
             if ($this->config['redis_persistence']) {
                 $this->redisPersistence->remove($data['to']);
+            }
+            if ($this->config['database_persistence']) {
+                $this->databasePersistence->pushed($data['msg_id']);
             }
         }
     }

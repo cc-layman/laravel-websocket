@@ -20,6 +20,23 @@ class DatabasePersistence
             'to' => $data['to'],
             'content' => $data['content'],
             'extra' => is_null($data['extra']) ? null : json_encode($data['extra']),
+            'pushed' => 'PENDING',
+            'status' => 'UNREAD',
         ]);
     }
+
+    /**
+     * 推送状态修改
+     * @param int|string $msgId
+     * @return void
+     */
+    public function pushed(int|string $msgId): void
+    {
+        WebSocketMessage::query()
+            ->where('msg_id', $msgId)
+            ->update([
+                'pushed' => 'SUCCESS',
+            ]);
+    }
+
 }

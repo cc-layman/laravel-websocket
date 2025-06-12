@@ -65,13 +65,15 @@ class WebSocketServer
             $userid = (int)($request->get['userid'] ?? 0);
             if ($userid > 0) {
                 if ($this->config['database_persistence']) {
-                    $offlineMessages = WebSocketMessage::where('to', $userid)
+                    $offlineMessages = WebSocketMessage::query()
+                        ->where('to', $userid)
                         ->where('status', 'UNREAD')
                         ->get();
                     foreach ($offlineMessages as $message) {
                         $data = Utils::format($message->type, $message->from, $message->to, $message->content, $message->extra);
                         $data = array_merge($data, ['msg_id' => $message->msg_id]);
                         $server->push($request->fd, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+                        $this->databasePersistence->pushed($message->msg_id);
                     }
                 }
                 if ($this->config['redis_persistence']) {
