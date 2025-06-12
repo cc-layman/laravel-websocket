@@ -15,8 +15,8 @@ class DatabasePersistence
     {
         WebSocketMessage::query()->create([
             'type' => $data['type'],
-            'from_userid' => $data['from'],
-            'to_userid' => $data['to'],
+            'from' => $data['from'],
+            'to' => $data['to'],
             'content' => $data['content'],
             'extra' => is_null($data['extra']) ? null : json_encode($data['extra']),
         ]);
@@ -30,7 +30,7 @@ class DatabasePersistence
     public function remove(int|string $toUserid): void
     {
         WebSocketMessage::query()
-            ->where('to_userid', $toUserid)
+            ->where('to', $toUserid)
             ->delete();
     }
 }

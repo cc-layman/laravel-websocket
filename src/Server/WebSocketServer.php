@@ -2,9 +2,7 @@
 
 namespace Layman\LaravelWebsocket\Server;
 
-use co;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redis;
 use Layman\LaravelWebsocket\Models\WebSocketMessage;
 use Layman\LaravelWebsocket\Support\ConnectionManager;
 use Layman\LaravelWebsocket\Support\DatabasePersistence;
@@ -12,15 +10,13 @@ use Layman\LaravelWebsocket\Support\Heartbeat;
 use Layman\LaravelWebsocket\Support\MessageDispatcher;
 use Layman\LaravelWebsocket\Support\MessageFormatter;
 use Layman\LaravelWebsocket\Support\RedisPersistence;
-use Predis\Client;
-use Predis\ClientInterface;
-use Predis\Consumer\Push\PushResponseInterface;
+use Swoole\Coroutine;
+use Swoole\Coroutine\Redis;
 use Swoole\Http\Request;
 use Swoole\WebSocket\Server;
 
 class WebSocketServer
 {
-
     protected Server $server;
     protected ConnectionManager $connections;
     protected Heartbeat $heartbeat;
@@ -126,33 +122,48 @@ class WebSocketServer
     protected function subscribeToRedis(): void
     {
         $dispatcher = $this->dispatcher;
-        $config     = $this->config;
-        go(function () use ($config, $dispatcher) {
+        $config     = config('database.redis.default');
+        $channel    = $this->config['redis_subscribe_channel'];
+        go(function () use ($dispatcher, $config, $channel) {
             while (true) {
                 try {
-                    $client = new Client([
-                        'read_write_timeout' => 0,
-                        'protocol' => 3,
-                    ]);
+                    $redis   = new Redis();
+                    $connect = $redis->connect($config['host'], (int)$config['port']);
+                    if (!$connect) {
+                        Log::error('Redis connect failed. errCode: ', [$redis->errCode, $redis->errMsg]);
+                        Coroutine::sleep(3);
+                        continue;
+                    }
 
-                    $push = $client->push(static function (ClientInterface $client) use ($config) {
-                        $client->subscribe($config['redis_subscribe_channel']);
-                    });
-                    foreach ($push as $notification) {
-                        var_dump($notification);
-                        if ((null !== $notification) && $notification->getDataType() === PushResponseInterface::MESSAGE_DATA_TYPE) {
-                            $message = $notification[2];
-                            $data    = json_decode($message, true);
-                            if (empty($data) || empty($data['content'])) {
-                                continue;
+                    if (!empty($config['password'])) {
+                        $redis->auth($config['password']);
+                    }
+                    if (!empty($config['database'])) {
+                        $redis->select($config['database']);
+                    }
+
+                    $redis->subscribe([$channel]);
+
+                    while (true) {
+                        $message = $redis->recv();
+                        if ($message === false) {
+                            Log::error('Redis connection closed.', [$redis->errCode]);
+                            break;
+                        }
+
+                        if (is_array($message) && $message[0] === 'message') {
+                            Log::error('subscribe message.', [$message]);
+                            $data = json_decode($message[2], true);
+                            if (!empty($data['content'])) {
+                                $dispatcher->pushSystemMessage($data);
                             }
-                            $dispatcher->pushSystemMessage($data);
                         }
                     }
+                    $redis->close();
                 } catch (\Throwable $throwable) {
-                    Log::error('redis-消息订阅异常：', [$throwable->getMessage()]);
-                    Co::sleep(3);
+                    Log::error('Redis subscription error: ', [$throwable->getMessage()]);
                 }
+                Coroutine::sleep(3);
             }
         });
     }

@@ -44,7 +44,6 @@ class MessageDispatcher
                 $this->groupMessage($userid, $data['to'], $data['content'] ?? '', $data['extra'] ?? null);
                 break;
             default:
-                // Other types of messages, ignore or expand
                 break;
         }
     }
@@ -88,7 +87,7 @@ class MessageDispatcher
     {
         switch ($data['type'] ?? '') {
             case 'toUser':
-                $fd   = $this->connections->getFdByUserId($data['toUserid']);
+                $fd   = $this->connections->getFdByUserId($data['to']);
                 $data = MessageFormatter::format($data['type'], $data['from'], $data['to'], $data['content'], $data['extra'] ?? null);
                 $this->sendMessage($fd, $data);
                 break;
