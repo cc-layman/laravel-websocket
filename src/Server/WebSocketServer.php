@@ -152,7 +152,6 @@ class WebSocketServer
                         }
 
                         if (is_array($message) && $message[0] === 'message') {
-                            Log::error('subscribe message.', [$message]);
                             $data = json_decode($message[2], true);
                             if (!empty($data['content'])) {
                                 $dispatcher->pushSystemMessage($data);
