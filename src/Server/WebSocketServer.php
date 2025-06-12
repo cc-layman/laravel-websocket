@@ -70,7 +70,7 @@ class WebSocketServer
                         ->where('status', 'UNREAD')
                         ->get();
                     foreach ($offlineMessages as $message) {
-                        $data = Utils::format($message->type, $message->from, $message->to, $message->content, $message->extra);
+                        $data = Utils::format($message->type, $message->from, $message->to, $message->content, json_decode($message->extra, true) ?? $message->extra);
                         $data = array_merge($data, ['msg_id' => $message->msg_id]);
                         $server->push($request->fd, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
                         $this->databasePersistence->pushed($message->msg_id);
