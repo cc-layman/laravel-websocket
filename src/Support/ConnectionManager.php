@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Redis;
 
 class ConnectionManager
 {
-    protected string $userToFdKey = 'ws:user_to_fd';
-    protected string $fdToUserKey = 'ws:fd_to_user';
+    protected string $userToFdKey = 'websocket:user_to_fd';
+    protected string $fdToUserKey = 'websocket:fd_to_user';
 
     /**
      * 设置用户与连接关系

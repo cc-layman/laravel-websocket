@@ -7,7 +7,7 @@
 <body>
 <h1>WebSocket 测试</h1>
 
-<p>请输入 UserID: <input type="text" id="useridInput" placeholder="输入你的UserID" /></p>
+<p>请输入 UserID: <input type="text" id="useridInput" placeholder="输入你的UserID"/></p>
 <button id="connectBtn">连接</button>
 
 <p>当前 UserID: <span id="useridDisplay">未连接</span></p>
@@ -20,6 +20,10 @@
     <br><br>
     <label for="message">消息内容：</label>
     <input type="text" id="message" placeholder="输入消息">
+    <br><br>
+    <label for="extra">扩展参数 (extra):</label>
+    <input type="text" id="extra" placeholder="输入扩展参数（可选）">
+    <br><br>
     <button onclick="sendMessage()">发送消息</button>
 </div>
 
@@ -44,7 +48,7 @@
         document.getElementById('useridDisplay').innerText = userid;
 
         // 建立 WebSocket 连接
-        ws = new WebSocket('ws://127.0.0.1:9502?userid=' + userid);
+        ws = new WebSocket('ws://127.0.0.1:9502?userid=' + encodeURIComponent(userid));
 
         ws.onopen = function () {
             document.getElementById('status').innerText = '连接状态：已连接';
@@ -95,17 +99,29 @@
 
         const toUserId = document.getElementById('to_userid').value.trim();
         const message = document.getElementById('message').value.trim();
+        const extraInput = document.getElementById('extra').value.trim();
 
         if (!toUserId || !message) {
             alert('请填写接收用户ID和消息内容');
             return;
         }
 
+        let payloadExtra = null;
+
+        if (extraInput !== '') {
+            try {
+                payloadExtra = JSON.parse(extraInput);
+            } catch (e) {
+                payloadExtra = extraInput;
+            }
+        }
+
         const payload = {
             type: 'private',
             to: toUserId,
             from: userid,
-            content: message
+            content: message,
+            extra: payloadExtra
         };
 
         ws.send(JSON.stringify(payload));
