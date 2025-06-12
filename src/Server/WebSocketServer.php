@@ -99,7 +99,7 @@ class WebSocketServer
                 return;
             }
 
-            if ($data['type'] !== 'ping' && empty($data['content']) || is_string($data['extra'])) {
+            if ($data['type'] !== 'ping' && empty($data['content']) || (!empty($data['extra']) && is_string($data['extra']))) {
                 return;
             }
 
