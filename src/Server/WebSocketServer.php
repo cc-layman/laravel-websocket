@@ -127,7 +127,10 @@ class WebSocketServer
         go(function () use ($dispatcher, $config, $channel) {
             while (true) {
                 try {
-                    $redis   = new Redis();
+                    $redis = new Redis();
+                    $redis->setOptions([
+                        'timeout' => -1,
+                    ]);
                     $connect = $redis->connect($config['host'], (int)$config['port']);
                     if (!$connect) {
                         Log::error('Redis connect failed. errCode: ', [$redis->errCode, $redis->errMsg]);
@@ -149,7 +152,6 @@ class WebSocketServer
                         if ($message === false) {
                             break;
                         }
-
                         if (is_array($message) && $message[0] === 'message') {
                             $data = json_decode($message[2], true);
                             if (!empty($data['content'])) {
