@@ -11,7 +11,6 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('websocket_messages', function (Blueprint $table) {
-            $table->engine = 'MyISAM';
             $table->id();
             $table->string('msg_id')->unique()->comment('消息id');
             $table->string('from')->comment('发送者用户ID');
