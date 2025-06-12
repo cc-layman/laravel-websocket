@@ -16,7 +16,7 @@ class Utils
     public static function format(string $type, int|string $from, int|string $to, string $content, null|array $extra): array
     {
         return [
-            'type' => $type,
+            'type' => strtoupper($type),
             'from' => $from,
             'to' => $to,
             'content' => $content,
