@@ -67,7 +67,7 @@ class WebSocketServer
                 if ($this->config['database_persistence']) {
                     $offlineMessages = WebSocketMessage::query()
                         ->where('to', $userid)
-                        ->where('status', 'UNREAD')
+                        ->where('pushed', 'PENDING')
                         ->get();
                     foreach ($offlineMessages as $message) {
                         $data = Utils::format($message->type, $message->from, $message->to, $message->content, json_decode($message->extra, true) ?? $message->extra);
