@@ -51,6 +51,12 @@ json_encode([
     // 扩展内容
     'extra' => null|array,
 ])
+
+// 实现auth认证
+class Auth implements WebSocketAuthInterface
+{
+    
+}
 ```
 
 ## 🙌 支持与贡献

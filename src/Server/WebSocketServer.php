@@ -14,6 +14,7 @@ use Swoole\Coroutine;
 use Swoole\Coroutine\Redis;
 use Swoole\Http\Request;
 use Swoole\WebSocket\Server;
+use WebSocketAuthInterface;
 
 class WebSocketServer
 {
@@ -62,7 +63,18 @@ class WebSocketServer
     protected function open(): void
     {
         $this->server->on('open', function (Server $server, Request $request) {
-            $userid = (int)($request->get['userid'] ?? 0);
+            if (is_null($this->config['auth_class'])) {
+                $userid = (int)($request->get['userid'] ?? 0);
+            } else {
+                $auth = new $this->config['auth_class'];
+                if ($auth instanceof WebSocketAuthInterface) {
+                    Log::error('不属于WebSocketAuthInterface');
+                    $server->close($request->fd);
+                }
+                $query  = $request->get ?? [];
+                $userid = $auth->authenticate($query);
+            }
+
             if ($userid > 0) {
                 if ($this->config['database_persistence']) {
                     $offlineMessages = WebSocketMessage::query()

@@ -44,4 +44,9 @@ return [
      * 启动数据库离线消息(mysql) 启用后不会销毁当前消息数据，如需销毁，建议自行实现用户已读销毁
      */
     'database_persistence' => false,
+
+    /**
+     * auth认证类
+     */
+    'auth_class' => null,
 ];
