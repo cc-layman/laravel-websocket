@@ -69,9 +69,9 @@ class WebSocketServer
                         ->where('status', 'UNREAD')
                         ->get();
                     foreach ($offlineMessages as $message) {
-                        $message = Utils::format($message->type, $message->from, $message->to, $message->content, $message->extra);
-                        $message = array_merge($message, ['msg_id' => $message->msg_id]);
-                        $server->push($request->fd, json_encode($message, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+                        $data = Utils::format($message->type, $message->from, $message->to, $message->content, $message->extra);
+                        $data = array_merge($data, ['msg_id' => $message->msg_id]);
+                        $server->push($request->fd, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
                     }
                 }
                 if ($this->config['redis_persistence']) {
