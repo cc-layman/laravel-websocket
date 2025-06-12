@@ -67,7 +67,7 @@ class WebSocketServer
                 $userid = (int)($request->get['userid'] ?? 0);
             } else {
                 $auth = new $this->config['auth_class'];
-                if ($auth instanceof WebSocketAuthInterface) {
+                if (!($auth instanceof WebSocketAuthInterface)) {
                     Log::error('不属于WebSocketAuthInterface');
                     $server->close($request->fd);
                 }
