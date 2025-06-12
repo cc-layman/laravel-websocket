@@ -1,5 +1,6 @@
 <?php
 
+namespace Layman\LaravelWebsocket\Interfaces;
 interface WebSocketAuthInterface
 {
     /**

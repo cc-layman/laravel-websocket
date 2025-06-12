@@ -3,6 +3,7 @@
 namespace Layman\LaravelWebsocket\Server;
 
 use Illuminate\Support\Facades\Log;
+use Layman\LaravelWebsocket\Interfaces\WebSocketAuthInterface;
 use Layman\LaravelWebsocket\Models\WebSocketMessage;
 use Layman\LaravelWebsocket\Support\ConnectionManager;
 use Layman\LaravelWebsocket\Support\DatabasePersistence;
@@ -14,7 +15,6 @@ use Swoole\Coroutine;
 use Swoole\Coroutine\Redis;
 use Swoole\Http\Request;
 use Swoole\WebSocket\Server;
-use WebSocketAuthInterface;
 
 class WebSocketServer
 {
