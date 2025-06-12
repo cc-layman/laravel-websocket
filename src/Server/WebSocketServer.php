@@ -147,7 +147,6 @@ class WebSocketServer
                     while (true) {
                         $message = $redis->recv();
                         if ($message === false) {
-                            Log::error('Redis connection closed.', [$redis->errCode]);
                             break;
                         }
 
