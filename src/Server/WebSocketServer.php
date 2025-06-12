@@ -8,7 +8,7 @@ use Layman\LaravelWebsocket\Support\ConnectionManager;
 use Layman\LaravelWebsocket\Support\DatabasePersistence;
 use Layman\LaravelWebsocket\Support\Heartbeat;
 use Layman\LaravelWebsocket\Support\MessageDispatcher;
-use Layman\LaravelWebsocket\Support\MessageFormatter;
+use Layman\LaravelWebsocket\Support\Utils;
 use Layman\LaravelWebsocket\Support\RedisPersistence;
 use Swoole\Coroutine;
 use Swoole\Coroutine\Redis;
@@ -65,13 +65,13 @@ class WebSocketServer
             $userid = (int)($request->get['userid'] ?? 0);
             if ($userid > 0) {
                 if ($this->config['database_persistence']) {
-                    $offlineMessages = WebSocketMessage::where('to_userid', $userid)
+                    $offlineMessages = WebSocketMessage::where('to', $userid)
                         ->where('status', 'UNREAD')
                         ->get();
                     foreach ($offlineMessages as $message) {
-                        $message = MessageFormatter::format($message->type, $message->from_userid, $message->to_userid, $message->content);
+                        $message = Utils::format($message->type, $message->from, $message->to, $message->content, $message->extra);
+                        $message = array_merge($message, ['msg_id' => $message->msg_id]);
                         $server->push($request->fd, json_encode($message, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-                        $this->databasePersistence->remove($message->to_userid);
                     }
                 }
                 if ($this->config['redis_persistence']) {

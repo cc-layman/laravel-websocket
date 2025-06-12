@@ -58,7 +58,7 @@ class MessageDispatcher
     protected function privateMessage(int|string $fromUserid, int|string $toUserid, string $content, null|array $extra): void
     {
         $fd   = $this->connections->getFdByUserId($toUserid);
-        $data = MessageFormatter::format('private', $fromUserid, $toUserid, $content, $extra);
+        $data = Utils::format('private', $fromUserid, $toUserid, $content, $extra);
         $this->sendMessage($fd, $data);
     }
 
@@ -73,7 +73,7 @@ class MessageDispatcher
     {
         foreach ($groups as $toUserid) {
             $fd   = $this->connections->getFdByUserId($toUserid);
-            $data = MessageFormatter::format('group', $fromUserid, $toUserid, $content, $extra);
+            $data = Utils::format('group', $fromUserid, $toUserid, $content, $extra);
             $this->sendMessage($fd, $data);
         }
     }
@@ -88,20 +88,20 @@ class MessageDispatcher
         switch ($data['type'] ?? '') {
             case 'toUser':
                 $fd   = $this->connections->getFdByUserId($data['to']);
-                $data = MessageFormatter::format($data['type'], $data['from'], $data['to'], $data['content'], $data['extra'] ?? null);
+                $data = Utils::format($data['type'], $data['from'], $data['to'], $data['content'], $data['extra'] ?? null);
                 $this->sendMessage($fd, $data);
                 break;
             case 'toGroups':
                 foreach ($data['to'] as $toUserid) {
                     $fd   = $this->connections->getFdByUserId($toUserid);
-                    $data = MessageFormatter::format($data['type'], $data['from'], $toUserid, $data['content'], $data['extra'] ?? null);
+                    $data = Utils::format($data['type'], $data['from'], $toUserid, $data['content'], $data['extra'] ?? null);
                     $this->sendMessage($fd, $data);
                 }
                 break;
             case 'toOnline':
                 foreach ($this->connections->getAllFds() as $fd) {
                     $toUserid = $this->connections->getUserIdByFd($fd);
-                    $data     = MessageFormatter::format($data['type'], $data['from'], $toUserid, $data['content'], $data['extra'] ?? null);
+                    $data     = Utils::format($data['type'], $data['from'], $toUserid, $data['content'], $data['extra'] ?? null);
                     $this->sendMessage($fd, $data);
                 }
                 break;
@@ -119,6 +119,7 @@ class MessageDispatcher
      */
     private function sendMessage(int|null $fd, array $data): void
     {
+        $data    = array_merge($data, ['msg_id' => Utils::generate_uuid()]);
         $message = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($this->config['redis_persistence']) {
             $this->redisPersistence->add($data['to'], $message);
@@ -130,9 +131,6 @@ class MessageDispatcher
             $this->server->push($fd, $message);
             if ($this->config['redis_persistence']) {
                 $this->redisPersistence->remove($data['to']);
-            }
-            if ($this->config['database_persistence']) {
-                $this->databasePersistence->remove($data['to']);
             }
         }
     }

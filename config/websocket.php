@@ -36,12 +36,12 @@ return [
     'redis_subscribe_channel' => 'redis_subscribe_channel',
 
     /**
-     * 启用redis离线消息
+     * 启用redis离线消息 启用后消息一发出，会立即销毁当前消息缓存
      */
     'redis_persistence' => false,
 
     /**
-     * 启动数据库离线消息(mysql)
+     * 启动数据库离线消息(mysql) 启用后不会销毁当前消息数据，如需销毁，建议自行实现用户已读销毁
      */
     'database_persistence' => false,
 ];

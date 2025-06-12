@@ -14,23 +14,12 @@ class DatabasePersistence
     public function add(array $data): void
     {
         WebSocketMessage::query()->create([
+            'msg_id' => $data['msg_id'],
             'type' => $data['type'],
             'from' => $data['from'],
             'to' => $data['to'],
             'content' => $data['content'],
             'extra' => is_null($data['extra']) ? null : json_encode($data['extra']),
         ]);
-    }
-
-    /**
-     * 删除消息
-     * @param int|string $toUserid
-     * @return void
-     */
-    public function remove(int|string $toUserid): void
-    {
-        WebSocketMessage::query()
-            ->where('to', $toUserid)
-            ->delete();
     }
 }
