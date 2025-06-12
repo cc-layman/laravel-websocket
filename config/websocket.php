@@ -3,7 +3,7 @@ return [
     /**
      * 地址
      */
-    'host' => '127.0.0.1',
+    'host' => '0.0.0.0',
 
     /**
      * 端口
@@ -11,9 +11,9 @@ return [
     'port' => 9502,
 
     /**
-     * 启动类型 SWOOLE_BASE = 1|SWOOLE_PROCESS = 2
+     * 启动类型 SWOOLE_BASE|SWOOLE_PROCESS
      */
-    'model' => 1,
+    'model' => SWOOLE_BASE,
 
     /**
      * 启动进程数
@@ -23,7 +23,7 @@ return [
     /**
      * 每3秒发送一次 ping
      */
-    'heartbeat_interval' => 3,
+    'heartbeat_interval' => 5,
 
     /**
      *  超过30秒未响应则断开连接
