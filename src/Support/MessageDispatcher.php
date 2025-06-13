@@ -22,118 +22,83 @@ class MessageDispatcher
     }
 
     /**
-     * 处理客户端消息
+     * 处理消息
+     * @param string $type
      * @param int $fd
      * @param array $data
      * @return void
      */
-    public function handle(int $fd, array $data): void
+    public function handle(string $type, int $fd, array $data): void
     {
-        $userid = $this->connections->getUserIdByFd($fd);
-        if (!$userid) {
-            $this->server->close($fd);
-            return;
+        if ($type == 'message') {
+            $userid = $this->connections->getUserIdByFd($fd);
+            if (!$userid) {
+                $this->server->close($fd);
+                return;
+            }
         }
 
-        switch ($data['type'] ?? '') {
-            case 'private':
-                $this->privateMessage($userid, $data['to'], $data['content'] ?? '', $data['extra'] ?? null);
-                break;
-
-            case 'group':
-                $this->groupMessage($userid, $data['to'], $data['content'] ?? '', $data['extra'] ?? null);
-                break;
-            default:
-                break;
+        $data = Utils::format($data);
+        if ($this->config['database_persistence']) {
+            $this->databasePersistence->createMessage($data);
         }
+
+        $this->dispatch($data);
     }
 
     /**
-     * 私聊消息
-     * @param int|string $fromUserid
-     * @param int|string $toUserid
-     * @param string $content
-     * @return void
-     */
-    protected function privateMessage(int|string $fromUserid, int|string $toUserid, string $content, null|array $extra): void
-    {
-        $fd   = $this->connections->getFdByUserId($toUserid);
-        $data = Utils::format('private', $fromUserid, $toUserid, $content, $extra);
-        $this->sendMessage($fd, $data);
-    }
-
-    /**
-     * 群聊消息
-     * @param int|string $fromUserid
-     * @param array $groups
-     * @param string $content
-     * @return void
-     */
-    protected function groupMessage(int|string $fromUserid, array $groups, string $content, null|array $extra): void
-    {
-        foreach ($groups as $toUserid) {
-            $fd   = $this->connections->getFdByUserId($toUserid);
-            $data = Utils::format('group', $fromUserid, $toUserid, $content, $extra);
-            $this->sendMessage($fd, $data);
-        }
-    }
-
-    /**
-     * 消息订阅
+     * 消息分发处理
      * @param array $data
      * @return void
      */
-    public function pushSystemMessage(array $data): void
+    private function dispatch(array $data): void
     {
-        switch ($data['type'] ?? '') {
+        switch ($data['type']) {
             case 'notice':
-                $fd   = $this->connections->getFdByUserId($data['to']);
-                $data = Utils::format($data['type'], $data['from'], $data['to'], $data['content'], $data['extra'] ?? null);
-                $this->sendMessage($fd, $data);
+            case 'private':
+                $fd = $this->connections->getFdByUserId($data['to']);
+                $this->push($fd, $data['to'], $data);
                 break;
             case 'broadcast':
-                foreach ($data['to'] as $toUserid) {
-                    $fd   = $this->connections->getFdByUserId($toUserid);
-                    $data = Utils::format($data['type'], $data['from'], $toUserid, $data['content'], $data['extra'] ?? null);
-                    $this->sendMessage($fd, $data);
+            case 'group':
+                foreach ($data['to'] as $to) {
+                    $fd = $this->connections->getFdByUserId($to);
+                    $this->push($fd, $to, $data);
                 }
                 break;
             case 'online':
                 foreach ($this->connections->getAllFds() as $fd) {
-                    $toUserid = $this->connections->getUserIdByFd($fd);
-                    $data     = Utils::format($data['type'], $data['from'], $toUserid, $data['content'], $data['extra'] ?? null);
-                    $this->sendMessage($fd, $data);
+                    $to = $this->connections->getUserIdByFd($fd);
+                    $this->push($fd, $to, $data);
                 }
                 break;
             default:
                 break;
-
         }
     }
 
     /**
-     * 发送消息
+     * 消息推送
      * @param int|null $fd
+     * @param int|string $to
      * @param array $data
      * @return void
      */
-    private function sendMessage(int|null $fd, array $data): void
+    private function push(int|null $fd, int|string $to, array $data): void
     {
-        $data    = array_merge($data, ['msg_id' => Utils::generate_uuid()]);
-        $message = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($this->config['redis_persistence']) {
-            $this->redisPersistence->add($data['to'], $message);
+            $this->redisPersistence->add($data['to'], json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         }
         if ($this->config['database_persistence']) {
-            $this->databasePersistence->add($data);
+            $this->databasePersistence->createMessageReceipt($data['msg_id'], $data['to']);
         }
         if ($fd) {
-            $this->server->push($fd, $message);
+            $this->server->push($fd, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
             if ($this->config['redis_persistence']) {
                 $this->redisPersistence->remove($data['to']);
             }
             if ($this->config['database_persistence']) {
-                $this->databasePersistence->pushed($data['msg_id']);
+                $this->databasePersistence->pushed($data['msg_id'], $data['to']);
             }
         }
     }

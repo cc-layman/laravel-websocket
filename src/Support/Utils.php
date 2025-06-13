@@ -2,28 +2,49 @@
 
 namespace Layman\LaravelWebsocket\Support;
 
+use Layman\LaravelWebsocket\Models\WebSocketMessageReceipt;
+
 class Utils
 {
+
     /**
-     * 设置统一消息格式
-     * @param string $type
-     * @param int|string $from
-     * @param int|string $to
-     * @param string $content
-     * @param array|null $extra
+     * 设置全局统一消息格式
+     * @param array $data
      * @return array
      */
-    public static function format(string $type, int|string $from, int|string $to, string $content, null|array $extra): array
+    public static function format(array $data): array
     {
         return [
-            'type' => strtoupper($type),
-            'from' => $from,
-            'to' => $to,
-            'content' => $content,
-            'extra' => $extra,
+            'msg_id' => Utils::generate_uuid(),
+            'type' => strtoupper($data['type']),
+            'group_id' => $data['group_id'] ?? null,
+            'from' => $data['from'],
+            'to' => $data['to'],
+            'content' => $data['content'],
+            'extra' => $data['extra'] ?? null,
             'time' => time(),
         ];
     }
+
+    /**
+     * 设置数据库统一消息格式
+     * @param WebSocketMessageReceipt $data
+     * @return array
+     */
+    public static function schema(WebSocketMessageReceipt $data): array
+    {
+        return [
+            'msg_id' => $data->getAttribute('msg_id'),
+            'type' => strtoupper($data->getRelation('websocketMessage')->getAttribute('type')),
+            'group_id' => $data->getRelation('websocketMessage')->getAttribute('group_id'),
+            'from' => $data->getRelation('websocketMessage')->getAttribute('group_id'),
+            'to' => $data->getAttribute('to'),
+            'content' => $data->getRelation('websocketMessage')->getAttribute('content'),
+            'extra' => $data->getRelation('websocketMessage')->getAttribute('extra'),
+            'time' => time(),
+        ];
+    }
+
 
     public static function generate_uuid(string $format = '%04x%04x-%04x-%04x-%04x-%04x%04x%04x', callable|string $salt = 'strtoupper'): string
     {

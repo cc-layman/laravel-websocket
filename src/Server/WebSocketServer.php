@@ -4,7 +4,7 @@ namespace Layman\LaravelWebsocket\Server;
 
 use Illuminate\Support\Facades\Log;
 use Layman\LaravelWebsocket\Interfaces\WebSocketAuthInterface;
-use Layman\LaravelWebsocket\Models\WebSocketMessage;
+use Layman\LaravelWebsocket\Models\WebSocketMessageReceipt;
 use Layman\LaravelWebsocket\Support\ConnectionManager;
 use Layman\LaravelWebsocket\Support\DatabasePersistence;
 use Layman\LaravelWebsocket\Support\Heartbeat;
@@ -67,25 +67,25 @@ class WebSocketServer
                 $userid = (int)($request->get['userid'] ?? 0);
             } else {
                 $auth = new $this->config['auth_class'];
-                if (!($auth instanceof WebSocketAuthInterface)) {
-                    Log::error('不属于WebSocketAuthInterface');
-                    $server->close($request->fd);
+                if ($auth instanceof WebSocketAuthInterface) {
+                    $query  = $request->get ?? [];
+                    $userid = $auth->authenticate($query);
+                } else {
+                    $userid = 0;
                 }
-                $query  = $request->get ?? [];
-                $userid = $auth->authenticate($query);
             }
 
             if ($userid > 0) {
                 if ($this->config['database_persistence']) {
-                    $offlineMessages = WebSocketMessage::query()
+                    $offlineMessages = WebSocketMessageReceipt::query()
+                        ->withWhereHas('websocketMessage')
                         ->where('to', $userid)
                         ->where('pushed', 'PENDING')
                         ->get();
                     foreach ($offlineMessages as $message) {
-                        $data = Utils::format($message->type, $message->from, $message->to, $message->content, json_decode($message->extra, true) ?? $message->extra);
-                        $data = array_merge($data, ['msg_id' => $message->msg_id]);
+                        $data = Utils::schema($message);
                         $server->push($request->fd, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
-                        $this->databasePersistence->pushed($message->msg_id);
+                        $this->databasePersistence->pushed($message->msg_id, $data['to']);
                     }
                 }
                 if ($this->config['redis_persistence']) {
@@ -121,7 +121,7 @@ class WebSocketServer
                 return;
             }
 
-            $this->dispatcher->handle($frame->fd, $data);
+            $this->dispatcher->handle('message', $frame->fd, $data);
         });
     }
 
@@ -169,7 +169,7 @@ class WebSocketServer
                         if (is_array($message) && $message[0] === 'message') {
                             $data = json_decode($message[2], true);
                             if (!empty($data['content'])) {
-                                $dispatcher->pushSystemMessage($data);
+                                $dispatcher->handle('subscribe', 0, $data);
                             }
                         }
                     }
