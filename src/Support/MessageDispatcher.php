@@ -2,6 +2,7 @@
 
 namespace Layman\LaravelWebsocket\Support;
 
+use Illuminate\Support\Facades\Log;
 use Swoole\WebSocket\Server;
 
 class MessageDispatcher
@@ -53,14 +54,15 @@ class MessageDispatcher
      */
     private function dispatch(array $data): void
     {
+        Log::info('dispatch', [$data]);
         switch ($data['type']) {
-            case 'notice':
             case 'private':
+            case 'notice':
                 $fd = $this->connections->getFdByUserId($data['to']);
                 $this->push($fd, $data['to'], $data);
                 break;
-            case 'broadcast':
             case 'group':
+            case 'broadcast':
                 foreach ($data['to'] as $to) {
                     $fd = $this->connections->getFdByUserId($to);
                     $this->push($fd, $to, $data);
@@ -90,6 +92,7 @@ class MessageDispatcher
             $this->redisPersistence->add($to, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         }
         if ($this->config['database_persistence']) {
+            Log::info('database_persistence', [$data]);
             $this->databasePersistence->createMessageReceipt($data['msg_id'], $to);
         }
         if ($fd) {
