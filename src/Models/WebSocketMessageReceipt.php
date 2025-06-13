@@ -13,7 +13,7 @@ class WebSocketMessageReceipt extends Model
     protected $table = 'websocket_message_receipts';
     protected $guarded = [];
 
-    protected function websocketMessage(): BelongsTo
+    public function websocketMessage(): BelongsTo
     {
         return $this->belongsTo(WebSocketMessage::class, 'msg_id', 'msg_id')->withDefault();
     }
