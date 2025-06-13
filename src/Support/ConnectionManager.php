@@ -55,7 +55,7 @@ class ConnectionManager
     public function getUserIdByFd(int $fd): ?int
     {
         $userid = Redis::hget($this->fdToUserKey, $fd);
-        return $userid !== null ? (int)$userid : null;
+        return $userid !== null ? $userid : null;
     }
 
     /**

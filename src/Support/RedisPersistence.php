@@ -18,22 +18,22 @@ class RedisPersistence
 
     /**
      * 写入消息
-     * @param int|string $toUserid
+     * @param int|string $to
      * @param string $message
      * @return void
      */
-    public function add(int|string $toUserid, string $message): void
+    public function add(int|string $to, string $message): void
     {
-        Redis::rpush($this->getUserOfflineMessagesKey($toUserid), $message);
+        Redis::rpush($this->getUserOfflineMessagesKey($to), $message);
     }
 
     /**
      * 删除消息
-     * @param int|string $toUserid
+     * @param int|string $to
      * @return void
      */
-    public function remove(int|string $toUserid): void
+    public function remove(int|string $to): void
     {
-        Redis::del($this->getUserOfflineMessagesKey($toUserid));
+        Redis::del($this->getUserOfflineMessagesKey($to));
     }
 }
