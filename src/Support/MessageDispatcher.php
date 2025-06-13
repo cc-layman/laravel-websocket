@@ -86,6 +86,7 @@ class MessageDispatcher
      */
     private function push(int|null $fd, int|string $to, array $data): void
     {
+        $data['to'] = $to;
         if ($this->config['redis_persistence']) {
             $this->redisPersistence->add($to, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         }
