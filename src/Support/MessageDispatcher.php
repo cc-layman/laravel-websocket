@@ -87,18 +87,18 @@ class MessageDispatcher
     private function push(int|null $fd, int|string $to, array $data): void
     {
         if ($this->config['redis_persistence']) {
-            $this->redisPersistence->add($data['to'], json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+            $this->redisPersistence->add($to, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         }
         if ($this->config['database_persistence']) {
-            $this->databasePersistence->createMessageReceipt($data['msg_id'], $data['to']);
+            $this->databasePersistence->createMessageReceipt($data['msg_id'], $to);
         }
         if ($fd) {
             $this->server->push($fd, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
             if ($this->config['redis_persistence']) {
-                $this->redisPersistence->remove($data['to']);
+                $this->redisPersistence->remove($to);
             }
             if ($this->config['database_persistence']) {
-                $this->databasePersistence->pushed($data['msg_id'], $data['to']);
+                $this->databasePersistence->pushed($data['msg_id'], $to);
             }
         }
     }
