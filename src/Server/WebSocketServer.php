@@ -64,7 +64,7 @@ class WebSocketServer
     {
         $this->server->on('open', function (Server $server, Request $request) {
             if (is_null($this->config['auth_class'])) {
-                $userid = (int)($request->get['userid'] ?? 0);
+                $userid = $request->get['userid'] ?? 0;
             } else {
                 $auth = new $this->config['auth_class'];
                 if ($auth instanceof WebSocketAuthInterface) {
