@@ -118,6 +118,7 @@
 
         const payload = {
             type: 'private',
+            group_id: null,
             to: toUserId,
             from: userid,
             content: message,

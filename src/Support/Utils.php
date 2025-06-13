@@ -37,7 +37,7 @@ class Utils
             'msg_id' => $data->getAttribute('msg_id'),
             'type' => strtoupper($data->getRelation('websocketMessage')->getAttribute('type')),
             'group_id' => $data->getRelation('websocketMessage')->getAttribute('group_id'),
-            'from' => $data->getRelation('websocketMessage')->getAttribute('group_id'),
+            'from' => $data->getRelation('websocketMessage')->getAttribute('from'),
             'to' => $data->getAttribute('to'),
             'content' => $data->getRelation('websocketMessage')->getAttribute('content'),
             'extra' => $data->getRelation('websocketMessage')->getAttribute('extra'),

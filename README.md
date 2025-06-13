@@ -28,31 +28,40 @@ php artisan vendor:publish --tag=websocket-view
 php artisan websocket:start
 ```
 
+## 📋 数据格式
+
+| 字段名      | 字段是否必传 | 数据类型             | 说明                                                                               |
+|----------|--------|------------------|----------------------------------------------------------------------------------|
+| type     | 是      | string           | 消息类型：<br>私聊：PRIVATE<br>群聊：GROUP<br>广播个人：NOTICE<br>广播群组：BROADCAST<br>全连接广播：ONLINE |
+| group_id | 是      | int/string/null  | 群号                                                                               |
+| from     | 是      | int/string       | 发送者                                                                              |
+| to       | 是      | int/string/array | 接收者                                                                              |
+| content  | 是      | string           | 消息内容                                                                             |
+| extra    | 是      | array/null       | 扩展内容                                                                             |
+
+
+
 ## 🚀 使用
 
 ```php
-use Illuminate\Support\Facades\Route;
 
 // 测试
-Route::get('/websocket', function () {
+Illuminate\Support\Facades\Route::get('/websocket', function () {
     return view('websocket');
 });
 
-// 数据格式
-json_encode([
-    // {私聊：private}{群聊：group}  消息订阅：{广播个人：notice}{广播群组：broadcast}{广播现在线所有连接：online}
-    'type' => 'notice',
-    // 发送者
-    'from' => 'system', 
-    // 收到者
-    'to' => 'xxxx',
-    // 消息内容
-    'content' => '数据格式',
-    // 扩展内容
-    'extra' => null|array,
-])
+// 消息订阅
+$client = new \Predis\Client();
+$client->publish('redis_subscribe_channel', json_encode([
+    'group_id' => null,
+    'type' => 'broadcast',
+    'from' => 'system',
+    'to' => ['xxx', 'xxxx'],
+    'content' => 'broadcast',
+    'extra' => null,
+]));
 
-// 实现auth认证
+// auth认证
 class Auth implements WebSocketAuthInterface
 {
     
