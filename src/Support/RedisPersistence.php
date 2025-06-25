@@ -13,7 +13,7 @@ class RedisPersistence
      */
     public function getUserOfflineMessagesKey(int|string $userid): string
     {
-        return sprintf("websocket:%d:offline_messages", $userid);
+        return sprintf("websocket:%s:offline_messages", $userid);
     }
 
     /**
