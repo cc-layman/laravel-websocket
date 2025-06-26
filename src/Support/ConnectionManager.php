@@ -50,9 +50,9 @@ class ConnectionManager
     /**
      * 使用连接fd获取用户标识
      * @param int $fd
-     * @return int|null
+     * @return int|string|null
      */
-    public function getUserIdByFd(int $fd): ?int
+    public function getUserIdByFd(int $fd): int|string|null
     {
         $userid = Redis::hget($this->fdToUserKey, $fd);
         return $userid !== null ? $userid : null;
