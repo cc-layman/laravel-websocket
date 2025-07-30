@@ -23,7 +23,7 @@ class Utils
             'classify' => $data['classify'],
             'content' => $data['content'],
             'extra' => $data['extra'] ?? null,
-            'time' => time(),
+            'created_at' => now()->toDateTimeString(),
         ];
     }
 
@@ -43,7 +43,7 @@ class Utils
             'classify' => $data->getRelation('websocketMessage')->getAttribute('classify'),
             'content' => $data->getRelation('websocketMessage')->getAttribute('content'),
             'extra' => $data->getRelation('websocketMessage')->getAttribute('extra'),
-            'time' => time(),
+            'created_at' => now()->toDateTimeString(),
         ];
     }
 
