@@ -61,6 +61,7 @@
                         type: 'ping',
                         to: 0,
                         from: userid,
+                        classify: 'ping',
                         content: 'ping'
                     };
                     ws.send(JSON.stringify(pingPayload));
@@ -121,6 +122,7 @@
             group_id: null,
             to: toUserId,
             from: userid,
+            classify: 'private',
             content: message,
             extra: payloadExtra
         };
