@@ -19,6 +19,7 @@ class DatabasePersistence
             'type' => $data['type'],
             'group_id' => $data['group_id'],
             'from' => $data['from'],
+            'classify' => $data['classify'],
             'content' => $data['content'],
             'extra' => is_null($data['extra']) ? null : json_encode($data['extra']),
         ]);

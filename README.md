@@ -36,6 +36,7 @@ php artisan websocket:start
 | group_id | 是      | int/string/null  | 群号                                                                               |
 | from     | 是      | int/string       | 发送者                                                                              |
 | to       | 是      | int/string/array | 接收者                                                                              |
+| classify  | 是      | string           | 业务分类                                                                             |
 | content  | 是      | string           | 消息内容                                                                             |
 | extra    | 是      | array/null       | 扩展内容                                                                             |
 

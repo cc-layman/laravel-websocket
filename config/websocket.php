@@ -46,6 +46,10 @@ return [
     'database_persistence' => false,
 
     /**
+     * 启动认证
+     */
+    'auth' => false,
+    /**
      * auth认证类
      */
     'auth_class' => null,

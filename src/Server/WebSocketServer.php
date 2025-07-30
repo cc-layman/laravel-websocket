@@ -63,7 +63,7 @@ class WebSocketServer
     protected function open(): void
     {
         $this->server->on('open', function (Server $server, Request $request) {
-            if (is_null($this->config['auth_class'])) {
+            if (is_null($this->config['auth_class']) && !$this->config['auth']) {
                 $userid = $request->get['userid'] ?? 0;
             } else {
                 $auth = new $this->config['auth_class'];
