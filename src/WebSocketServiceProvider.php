@@ -29,7 +29,6 @@ class WebSocketServiceProvider extends ServiceProvider
             $this->commands([
                 WebSocketCommand::class,
             ]);
-            // 自动加载迁移文件
             $this->loadMigrationsFrom(__DIR__ . '/../src/Database');
         }
 

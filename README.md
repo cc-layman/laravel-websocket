@@ -4,7 +4,7 @@ Laravel websocket 扩展包。
 
 ## ⏳ 安装准备
 
-1. PHP版本 >= ^7.2|^8.0
+1. PHP版本 >= ^8.0
 2. swoole版本 >= 4.8.*
 3. predis/predis版本 *
 4. redis版本 *
@@ -58,6 +58,7 @@ $client->publish('redis_subscribe_channel', json_encode([
     'type' => 'broadcast',
     'from' => 'system',
     'to' => ['xxx', 'xxxx'],
+    'classify' => 'remind',
     'content' => 'broadcast',
     'extra' => null,
 ]));
