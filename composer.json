@@ -1,0 +1,32 @@
+{
+    "name": "layman/laravel-websocket",
+    "description": "websocket",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Layman\\LaravelWebsocket\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "layman"
+        }
+    ],
+    "require": {
+        "php": "^8.0",
+        "predis/predis": "*",
+        "ext-swoole": "4.8.*"
+    },
+    "require-dev": {
+        "swoole/ide-helper": "^4.8"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Layman\\LaravelWebsocket\\WebSocketServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
