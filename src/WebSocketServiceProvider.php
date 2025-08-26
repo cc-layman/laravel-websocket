@@ -29,7 +29,7 @@ class WebSocketServiceProvider extends ServiceProvider
             $this->commands([
                 WebSocketCommand::class,
             ]);
-            $this->loadMigrationsFrom(__DIR__ . '/../src/Database');
+            $this->loadMigrationsFrom(__DIR__ . '/../src/Migrations');
         }
 
         $this->loadViewsFrom(__DIR__ . '/../src/Views', 'websocket');

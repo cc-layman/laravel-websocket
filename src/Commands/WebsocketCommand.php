@@ -3,16 +3,16 @@
 namespace Layman\LaravelWebsocket\Commands;
 
 use Illuminate\Console\Command;
-use Layman\LaravelWebsocket\Server\WebSocketServer;
+use Layman\LaravelWebsocket\Servers\WebSocketServer;
 
-class WebSocketCommand extends Command
+class WebsocketCommand extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'websocket:start';
+    protected $signature = 'chat:start';
 
     /**
      * The console command description.

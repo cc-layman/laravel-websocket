@@ -11,14 +11,14 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('websocket_message_receipts', function (Blueprint $table) {
-            $table->id();
-            $table->string('msg_id')->index()->comment('消息id');
-            $table->string('to')->comment('接收者用户ID');
-            $table->enum('pushed', ['PENDING', 'SUCCESS'])->default('PENDING')->comment('是否推送{PENDING:未推送}{SUCCESS:已推送}');
+            $table->uuid()->primary();
+            $table->string('message_uuid')->index()->comment('消息uuid');
+            $table->string('receiver')->index()->comment('接收者唯一标识');
+            $table->tinyInteger('pushed')->default(1)->comment('是否推送{1:未推送}{2:已推送}');
             $table->timestamp('read')->nullable()->comment('已读时间');
             $table->timestamps();
             $table->softDeletes();
-            $table->index(['msg_id', 'to'], 'msg_to_index');
+            $table->index('created_at');
         });
     }
 
