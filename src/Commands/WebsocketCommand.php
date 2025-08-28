@@ -3,7 +3,7 @@
 namespace Layman\LaravelWebsocket\Commands;
 
 use Illuminate\Console\Command;
-use Layman\LaravelWebsocket\Servers\WebSocketServer;
+use Layman\LaravelWebsocket\Servers\WebsocketServer;
 
 class WebsocketCommand extends Command
 {
@@ -12,7 +12,7 @@ class WebsocketCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'chat:start';
+    protected $signature = 'websocket:start';
 
     /**
      * The console command description.
@@ -26,7 +26,7 @@ class WebsocketCommand extends Command
      */
     public function handle()
     {
-        $server = new WebSocketServer();
+        $server = new WebsocketServer();
         $server->start();
     }
 }

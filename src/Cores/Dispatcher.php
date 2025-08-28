@@ -2,6 +2,7 @@
 
 namespace Layman\LaravelWebsocket\Cores;
 
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Predis\Client;
 use Swoole\WebSocket\Server;
@@ -10,15 +11,15 @@ class Dispatcher
 {
     protected Server $server;
     protected Connection $connection;
+    protected Heartbeat $heartbeat;
     protected array $config;
-    protected Message $message;
 
-    public function __construct(Server $server, Connection $connections, array $config)
+    public function __construct(Server $server, Connection $connections, Heartbeat $heartbeat, array $config)
     {
         $this->server     = $server;
         $this->connection = $connections;
+        $this->heartbeat  = $heartbeat;
         $this->config     = $config;
-        $this->message    = new Message();
     }
 
     /**
@@ -26,11 +27,10 @@ class Dispatcher
      *
      * @param string $data
      * @param int $fd
-     * @param bool $binary
      * @param bool $origin
      * @return void
      */
-    public function handle(string $data, int $fd = 0, bool $binary = true, bool $origin = true): void
+    public function handle(string $data, int $fd = 0, bool $origin = true): void
     {
         if ($fd > 0) {
             // 检测用户是否掉线
@@ -40,15 +40,18 @@ class Dispatcher
                 return;
             }
         }
-        $packet  = $binary ? $this->message->unpack($data) : json_decode($data, true);
-        $message = Utils::format($packet, $binary);
+        $message = Utils::unpack($data);
+        if ($message['type'] === 102) {
+            $this->heartbeat->pong($fd);
+            return;
+        }
         // 处理流消息处理，流消息暂不处理
         if ($message['count'] === 0) {
             $this->stream($data, $message);
             return;
         }
         $uuid = null;
-        if ($origin) {
+        if (!$origin) {
             // 存消息数据
             $uuid = Repository::createMessage($message);
         }
@@ -100,6 +103,7 @@ class Dispatcher
      */
     private function personal(string $data, array $message, string|null $uuid): void
     {
+        Log::info('personal-message', [$message]);
         if (!is_null($uuid)) {
             Repository::createMessageReceipt($uuid, $message['receiver']);
         }
@@ -108,7 +112,7 @@ class Dispatcher
             return;
         }
         if ($this->isHost($fd)) {
-            $this->server->push((int)Str::after('#', $fd), $data);
+            $this->server->push((int)Str::after($fd, '#'), $data, WEBSOCKET_OPCODE_BINARY);
         } else {
             $this->publish($fd, $data);
         }
@@ -159,7 +163,7 @@ class Dispatcher
         $fds = $this->connection->getGroupUserFd($message['receiver']);
         foreach ($fds as $fd) {
             if ($this->isHost($fd)) {
-                $this->server->push((int)Str::after('#', $fd), $data);
+                $this->server->push((int)Str::after($fd, '#'), $data, WEBSOCKET_OPCODE_BINARY);
             } else {
                 $this->publish($fd, $data);
             }
@@ -176,7 +180,7 @@ class Dispatcher
     private function broadcast(string $data, string $fd): void
     {
         if ($this->isHost($fd)) {
-            $this->server->push((int)Str::after('#', $fd), $data);
+            $this->server->push((int)Str::after($fd, '#'), $data, WEBSOCKET_OPCODE_BINARY);
         } else {
             $this->publish($fd, $data);
         }
@@ -191,7 +195,7 @@ class Dispatcher
      */
     private function isHost(string $fd): bool
     {
-        return Str::before('#', $fd) === Utils::sid();
+        return Str::before($fd, '#') === Utils::sid();
     }
 
     /**
@@ -204,6 +208,6 @@ class Dispatcher
     private function publish(string $fd, string $data): void
     {
         $client = new Client();
-        $client->publish(Str::before('#', $fd), $data);
+        $client->publish(Str::before($fd,'#'), $data);
     }
 }

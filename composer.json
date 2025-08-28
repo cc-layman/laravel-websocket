@@ -23,7 +23,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Layman\\LaravelWebsocket\\WebSocketServiceProvider"
+                "Layman\\LaravelWebsocket\\WebsocketServiceProvider"
             ]
         }
     },

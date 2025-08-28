@@ -2,6 +2,7 @@
 
 namespace Layman\LaravelWebsocket\Cores;
 
+use Illuminate\Support\Str;
 use Swoole\Timer;
 use Swoole\WebSocket\Server;
 
@@ -43,7 +44,19 @@ class Heartbeat
                     unset($this->lastPongTime[$fd]);
                     continue;
                 }
-                @$this->server->push($fd, json_encode(['type' => 'ping', 'time' => time()]), WEBSOCKET_OPCODE_PING);
+
+                @$this->server->push($fd, Utils::pack(
+                    101,
+                    Str::uuid(),
+                    1,
+                    1,
+                    [
+                        'sender' => 'server',
+                        'receiver' => 'client',
+                        'group_code' => null,
+                        'notice_type' => 1,
+                    ],
+                    'ping'), WEBSOCKET_OPCODE_BINARY);
             }
         });
     }

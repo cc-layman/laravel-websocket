@@ -42,12 +42,12 @@ class Connection
      * 使用用户标识获取连接fd
      *
      * @param int|string $userid
-     * @return int|null
+     * @return string|null
      */
-    public function getFdByUserId(int|string $userid): ?int
+    public function getFdByUserId(int|string $userid): ?string
     {
         $fd = Redis::hget($this->userToFdKey, $userid);
-        return is_null($fd) ? null : (int)$fd;
+        return is_null($fd) ? null : $fd;
     }
 
     /**

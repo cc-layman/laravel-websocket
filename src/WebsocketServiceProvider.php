@@ -3,9 +3,9 @@
 namespace Layman\LaravelWebsocket;
 
 use Illuminate\Support\ServiceProvider;
-use Layman\LaravelWebsocket\Commands\WebSocketCommand;
+use Layman\LaravelWebsocket\Commands\WebsocketCommand;
 
-class WebSocketServiceProvider extends ServiceProvider
+class WebsocketServiceProvider extends ServiceProvider
 {
     /**
      * Register services.
@@ -27,7 +27,7 @@ class WebSocketServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->commands([
-                WebSocketCommand::class,
+                WebsocketCommand::class,
             ]);
             $this->loadMigrationsFrom(__DIR__ . '/../src/Migrations');
         }
