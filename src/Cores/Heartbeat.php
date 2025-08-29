@@ -55,6 +55,7 @@ class Heartbeat
                         'receiver' => 'client',
                         'group_code' => null,
                         'notice_type' => 1,
+                        'files' => null,
                     ],
                     'ping'), WEBSOCKET_OPCODE_BINARY);
             }

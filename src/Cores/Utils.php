@@ -29,20 +29,19 @@ class Utils
      * @param string $sn 消息唯一编号
      * @param int $index 当前分片序号,从1开始
      * @param int $count 当前消息总分片数
-     * @param array $peer 发送者和接收者和消息类型和群编号
-     * @param string $payload 消息内容
+     * @param array $peer 发送者和接收者和消息类型和群编号（含 files 字段）
+     * @param string $payload 消息内容（二进制也可以）
      * @return string 二进制数据
      */
     public static function pack(int $type, string $sn, int $index, int $count, array $peer, string $payload): string
     {
-        // 将 peer 转为 JSON
-        $peerJson   = json_encode($peer);
-        $peerLength = strlen($peerJson);
+        // 将 peer 转为 JSON，支持中文
+        $peerJson   = json_encode($peer, JSON_UNESCAPED_UNICODE);
+        $peerLength = mb_strlen($peerJson, '8bit'); // 用字节长度
 
         // UUID: 36字符 → 16字节
         $snb = hex2bin(str_replace('-', '', $sn));
 
-        // 打包格式:type(1字节消息类型) + sn(4字节消息编号) + index(2字节分片序号) + count(2字节总分片数) + peerLength(2字节peer长度) + peerJson + payload
         return
             chr($type) .
             $snb .
@@ -98,7 +97,9 @@ class Utils
             'sender' => $peer['sender'],
             'receiver' => $peer['receiver'],
             'group_code' => $peer['group_code'],
+            'files' => $peer['files'],
             'payload' => $payload,
         ];
     }
+
 }

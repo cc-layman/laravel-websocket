@@ -32,10 +32,10 @@ class WebsocketServiceProvider extends ServiceProvider
             $this->loadMigrationsFrom(__DIR__ . '/../src/Migrations');
         }
 
-        $this->loadViewsFrom(__DIR__ . '/../src/Views', 'websocket');
+        $this->loadViewsFrom(__DIR__ . '/../src/Resources', 'websocket');
 
         $this->publishes([
-            __DIR__ . '/../src/Views/websocket.blade.php' => resource_path('views/websocket.blade.php'),
+            __DIR__ . '/../src/Resources/websocket.blade.php' => resource_path('views/websocket.blade.php'),
         ], 'websocket-view');
     }
 }

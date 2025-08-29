@@ -41,6 +41,7 @@ class Dispatcher
             }
         }
         $message = Utils::unpack($data);
+        Log::info('unpack-message', [$message]);
         if ($message['type'] === 102) {
             $this->heartbeat->pong($fd);
             return;
