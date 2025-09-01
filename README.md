@@ -54,19 +54,27 @@ Illuminate\Support\Facades\Route::get('/websocket', function () {
 });
 
 // 消息订阅
-$client = new \Predis\Client();
-$client->publish('redis_subscribe_channel', json_encode([
-    'group_id' => null,
-    'type' => 'broadcast',
-    'from' => 'system',
-    'to' => ['xxx', 'xxxx'],
-    'classify' => 'remind',
-    'content' => 'broadcast',
-    'extra' => null,
-]));
+$client = new Predis\Client();
+$client->publish('order_subscribe', Layman\LaravelWebsocket\Cores\Utils::pack(
+    1,
+    Str::uuid(),
+    1,
+    1,
+    [
+        'sender' => 'server',
+        'receiver' => 'x123',
+        'group_code' => null,
+        'notice_type' => 1,
+        'files' => [],
+    ],
+    json_encode([
+        'order_code' => 'xxx123',
+        'message' => '您有新的订单！',
+    ])
+));
 
 // auth认证
-class Authenticate implements AuthenticateInterface
+class Authenticate implements Layman\LaravelWebsocket\Interfaces\AuthenticateInterface
 {
     
 }

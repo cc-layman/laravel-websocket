@@ -81,7 +81,7 @@ class WebsocketServer
         });
     }
 
-    protected function message(): void
+    private function message(): void
     {
         $this->server->on('message', function (Server $server, $frame) {
             if ($frame->opcode === WEBSOCKET_OPCODE_BINARY) {
@@ -94,7 +94,7 @@ class WebsocketServer
         });
     }
 
-    protected function close(): void
+    private function close(): void
     {
         $this->server->on('close', function (Server $server, $fd) {
             $this->connection->remove($fd);
@@ -102,7 +102,7 @@ class WebsocketServer
         });
     }
 
-    protected function subscribe(): void
+    private function subscribe(): void
     {
         $dispatcher = $this->dispatcher;
         $config     = config('database.redis.default');
