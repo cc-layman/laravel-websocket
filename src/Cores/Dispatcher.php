@@ -108,7 +108,7 @@ class Dispatcher
     private function personal(string $data, array $message, string|null $uuid): void
     {
         if (!is_null($uuid)) {
-            Repository::createMessageReceipt($uuid, $message['receiver']);
+            Repository::createMessageReceipt($uuid, $message['receiver'], $message);
         }
         $fd = $this->connection->getFdByUserId($message['receiver']);
         if (empty($fd)) {
@@ -138,7 +138,7 @@ class Dispatcher
         $groupUserid = $group->websocketGroupUser->where('status', 1)->pluck('userid');
         foreach ($groupUserid as $value) {
             if (!is_null($uuid)) {
-                Repository::createMessageReceipt($uuid, $value);
+                Repository::createMessageReceipt($uuid, $value, $message);
             }
         }
         $fds = $this->connection->getGroupUserFd($groupUserid);
@@ -160,7 +160,7 @@ class Dispatcher
     {
         foreach ($message['receiver'] as $value) {
             if (!is_null($uuid)) {
-                Repository::createMessageReceipt($uuid, $value);
+                Repository::createMessageReceipt($uuid, $value, $message);
             }
         }
         $fds = $this->connection->getGroupUserFd($message['receiver']);

@@ -26,14 +26,18 @@ class Repository
      *
      * @param string $uuid
      * @param string|int $receiver
+     * @param array $message
      * @param int $pushed
      * @return void
      */
-    public static function createMessageReceipt(string $uuid, string|int $receiver, int $pushed = 1): void
+    public static function createMessageReceipt(string $uuid, string|int $receiver, array $message, int $pushed = 1): void
     {
         WebsocketMessageReceipt::query()->create([
             'message_uuid' => $uuid,
             'receiver' => $receiver,
+            'sn' => $message['sn'],
+            'index' => $message['index'],
+            'count' => $message['count'],
             'pushed' => $pushed,
         ]);
     }

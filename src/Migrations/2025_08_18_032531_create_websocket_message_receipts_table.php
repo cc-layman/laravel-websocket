@@ -14,6 +14,9 @@ return new class extends Migration {
             $table->uuid()->primary();
             $table->string('message_uuid')->index()->comment('消息uuid');
             $table->string('receiver')->index()->comment('接收者唯一标识');
+            $table->string('sn')->comment('消息序列号');
+            $table->integer('index')->default(1)->comment('消息分片索引');
+            $table->integer('count')->default(0)->comment('消息分片总数(0代表直播无限片)');
             $table->tinyInteger('pushed')->default(1)->comment('是否推送{1:未推送}{2:已推送}');
             $table->timestamp('read')->nullable()->comment('已读时间');
             $table->timestamps();
