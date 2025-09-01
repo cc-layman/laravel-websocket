@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class WebsocketGroup extends Model
 {
@@ -18,6 +19,15 @@ class WebsocketGroup extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
+
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (!$model->uuid) {
+                $model->uuid = (string) Str::uuid();
+            }
+        });
+    }
 
     protected static string $userModelClass;
     protected static string $userForeignKey;

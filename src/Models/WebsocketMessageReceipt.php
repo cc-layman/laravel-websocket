@@ -7,16 +7,26 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class WebsocketMessageReceipt extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'websocket_messages_receipts';
+    protected $table = 'websocket_message_receipts';
     protected $primaryKey = 'uuid';
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
+
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (!$model->uuid) {
+                $model->uuid = (string) Str::uuid();
+            }
+        });
+    }
 
     protected static string $userModelClass;
     protected static string $userForeignKey;

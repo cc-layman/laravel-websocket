@@ -93,11 +93,11 @@ class Utils
             'sn' => $sn,
             'index' => $index,
             'count' => $count,
-            'notice_type' => $peer['notice_type'],
-            'sender' => $peer['sender'],
-            'receiver' => $peer['receiver'],
-            'group_code' => $peer['group_code'],
-            'files' => $peer['files'],
+            'notice_type' => $peer['notice_type'] ?? null,
+            'sender' => $peer['sender'] ?? null,
+            'receiver' => $peer['receiver'] ?? null,
+            'group_code' => $peer['group_code'] ?? null,
+            'files' => $peer['files'] ?? [],
             'payload' => $payload,
         ];
     }

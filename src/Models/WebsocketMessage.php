@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class WebsocketMessage extends Model
 {
@@ -19,8 +20,21 @@ class WebsocketMessage extends Model
     protected $keyType = 'string';
     protected $guarded = [];
 
+    protected $casts = [
+        'files' => 'array',
+    ];
+
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (!$model->uuid) {
+                $model->uuid = (string) Str::uuid();
+            }
+        });
+    }
     protected static string $userModelClass;
     protected static string $userForeignKey;
+
     public static function setUserModel(string $class, string $foreignKey): Builder
     {
         static::$userModelClass = $class;

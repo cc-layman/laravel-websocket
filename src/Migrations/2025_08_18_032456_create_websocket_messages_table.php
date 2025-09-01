@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
@@ -19,12 +20,14 @@ return new class extends Migration {
             $table->tinyInteger('notice_type')->default(0)->comment('通知类型:{1:私聊}{2:群聊}{3:系统}{4:广播}');
             $table->string('sender')->index()->comment('发送者唯一标识');
             $table->string('group_code')->nullable()->index()->comment('群聊唯一标识');
-            $table->text('payload')->comment('消息内容');
+            $table->json('files')->nullable()->comment('文件内容');
+            $table->binary('payload')->comment('消息内容');
             $table->timestamps();
             $table->softDeletes();
             $table->index('created_at');
             $table->unique(['sn', 'index']);
         });
+        DB::statement("ALTER TABLE websocket_messages MODIFY payload LONGBLOB");
     }
 
     /**

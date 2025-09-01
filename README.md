@@ -18,7 +18,7 @@ composer require layman/laravel-websocket
 ## ⚙️ 发布配置
 
 ```bash
-php artisan vendor:publish --provider="Layman\LaravelWebsocket\WebsocketServiceProvider" --tag=websocket
+php artisan vendor:publish --provider="Layman\LaravelWebsocket\WebsocketServiceProvider" --tag=websocket-config
 php artisan vendor:publish --tag=websocket-view
 ```
 
@@ -30,19 +30,19 @@ php artisan websocket:start
 
 ## 📋 二进制消息协议数据格式
 
-| 字段名           | 字段是否必传 | 数据类型                  | 说明                                                                                                           |
-|---------------|--------|-----------------------|--------------------------------------------------------------------------------------------------------------|
-| type          | 是      | int                   | 消息类型：<br>1：文本<br>2：图片<br>3：文件<br>4：视屏<br>5：控制消息<br>6：音频<br>7：表情/动画<br>8：消息确认<br>9：其他<br>101：ping<br>102：pong |
-| sn            | 是      | string                | 消息序列号uuid                                                                                                    |
-| index         | 是      | int                   | 分片索引                                                                                                         |
-| count         | 是      | int                   | 分片总数                                                                                                         |
-| peer          | 是      | array                 | 发送者&接收者&群编号&通知类型                                                                                             |
-| └─sender      | 是      | int/string            | 发送者                                                                                                          |
-| └─receiver    | 是      | int/string/array/null | 接收者                                                                                                          |
-| └─group_code  | 是      | int/string/null       | 群编号                                                                                                          |
-| └─notice_type | 是      | int                   | 通知类型：<br>1：私聊<br>2：群聊<br>3：系统<br>4：广播<br>                                                                    |
-| └─files       | 是      | array/null            | 文件参数                                                                    |
-| payload       | 是      | string                | 消息内容                                                                                                         |
+| 字段名           | 字段是否必传 | 数据类型                 | 说明                                                                                                           |
+|---------------|--------|----------------------|--------------------------------------------------------------------------------------------------------------|
+| type          | 是      | int                  | 消息类型：<br>1：文本<br>2：图片<br>3：文件<br>4：视屏<br>5：控制消息<br>6：音频<br>7：表情/动画<br>8：消息确认<br>9：其他<br>101：ping<br>102：pong |
+| sn            | 是      | string               | 消息序列号uuid                                                                                                    |
+| index         | 是      | int                  | 分片索引                                                                                                         |
+| count         | 是      | int                  | 分片总数                                                                                                         |
+| peer          | 是      | array                | 发送者&接收者&群编号&通知类型                                                                                             |
+| └─sender      | 是      | int/string           | 发送者                                                                                                          |
+| └─receiver    | 是      | int/string/array/null | 接收者(只有notice_type=3 为系统消息才可为数组个格式)                                                                           |
+| └─group_code  | 是      | int/string/null      | 群编号                                                                                                          |
+| └─notice_type | 是      | int                  | 通知类型：<br>1：私聊<br>2：群聊<br>3：系统<br>4：广播<br>                                                                    |
+| └─files       | 是      | array            | 文件参数                                                                                                         |
+| payload       | 是      | string               | 消息内容                                                                                                         |
 
 ## 🚀 使用
 
@@ -66,7 +66,7 @@ $client->publish('redis_subscribe_channel', json_encode([
 ]));
 
 // auth认证
-class Auth implements WebSocketAuthInterface
+class Authenticate implements AuthenticateInterface
 {
     
 }

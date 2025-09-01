@@ -90,8 +90,6 @@ class WebsocketServer
                     return;
                 }
                 $this->dispatcher->handle($data, $frame->fd);
-            } else {
-                Log::info('websocket-on-message', ['无效的数据']);
             }
         });
     }
@@ -110,6 +108,7 @@ class WebsocketServer
         $config     = config('database.redis.default');
         $channels   = $this->config['subscribe_channels'];
         go(function () use ($dispatcher, $config, $channels) {
+            $retryCount = 0;
             while (true) {
                 try {
                     $redis = new Redis();
@@ -119,7 +118,10 @@ class WebsocketServer
                     $connect = $redis->connect($config['host'], (int)$config['port']);
                     if (!$connect) {
                         Log::error('Redis connect failed. errCode: ', [$redis->errCode, $redis->errMsg]);
-                        Coroutine::sleep(3);
+                        $retryCount++;
+                        $wait = min(60, 2 ** $retryCount);
+                        Log::warning("Redis reconnect attempt #{$retryCount}, waiting {$wait}s...");
+                        Coroutine::sleep($wait);
                         continue;
                     }
 
@@ -130,6 +132,8 @@ class WebsocketServer
                         $redis->select($config['database']);
                     }
 
+                    $retryCount = 0;
+
                     $redis->subscribe(array_merge($channels, [Utils::sid()]));
 
                     while (true) {
@@ -138,14 +142,17 @@ class WebsocketServer
                             break;
                         }
                         if (is_array($message) && $message[0] === 'message') {
-                            $dispatcher->handle($message[2], 0, Str::before($message[1],'-') === 'sid');
+                            $dispatcher->handle($message[2], 0, Str::before($message[1], '-') === 'sid');
                         }
                     }
                     $redis->close();
                 } catch (\Throwable $throwable) {
                     Log::error('Redis subscription error: ', [$throwable->getMessage()]);
+                    $retryCount++;
+                    $wait = min(60, 2 ** $retryCount);
+                    Log::warning("Redis reconnect attempt #{$retryCount}, waiting {$wait}s...");
+                    Coroutine::sleep($wait);
                 }
-                Coroutine::sleep(1);
             }
         });
     }

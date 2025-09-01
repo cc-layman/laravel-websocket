@@ -23,7 +23,7 @@ class WebsocketServiceProvider extends ServiceProvider
 
         $this->publishes([
             __DIR__ . '/../config/websocket.php' => config_path('websocket.php'),
-        ], 'websocket');
+        ], 'websocket-config');
 
         if ($this->app->runningInConsole()) {
             $this->commands([
@@ -32,10 +32,11 @@ class WebsocketServiceProvider extends ServiceProvider
             $this->loadMigrationsFrom(__DIR__ . '/../src/Migrations');
         }
 
-        $this->loadViewsFrom(__DIR__ . '/../src/Resources', 'websocket');
+        $this->loadViewsFrom(__DIR__ . '/../src/Resources/views', 'websocket');
 
         $this->publishes([
-            __DIR__ . '/../src/Resources/websocket.blade.php' => resource_path('views/websocket.blade.php'),
-        ], 'websocket-view');
+            __DIR__ . '/../src/Resources/views/websocket.blade.php' => resource_path('views/websocket.blade.php'),
+            __DIR__ . '/../src/Resources/js/ws-client.js' => public_path('js/ws-client.js'),
+        ], 'websocket-views');
     }
 }

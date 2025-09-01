@@ -32,52 +32,55 @@ class Dispatcher
      */
     public function handle(string $data, int $fd = 0, bool $origin = true): void
     {
-        if ($fd > 0) {
-            // 检测用户是否掉线
-            $userid = $this->connection->getUserIdByFd($fd);
-            if (is_null($userid)) {
-                $this->server->close($fd);
+        try {
+            if ($fd > 0) {
+                // 检测用户是否掉线
+                $userid = $this->connection->getUserIdByFd($fd);
+                if (is_null($userid)) {
+                    $this->server->close($fd);
+                    return;
+                }
+            }
+            $message = Utils::unpack($data);
+            if ($message['type'] === 102) {
+                $this->heartbeat->pong($fd);
                 return;
             }
-        }
-        $message = Utils::unpack($data);
-        Log::info('unpack-message', [$message]);
-        if ($message['type'] === 102) {
-            $this->heartbeat->pong($fd);
-            return;
-        }
-        // 处理流消息处理，流消息暂不处理
-        if ($message['count'] === 0) {
-            $this->stream($data, $message);
-            return;
-        }
-        $uuid = null;
-        if (!$origin) {
-            // 存消息数据
-            $uuid = Repository::createMessage($message);
-        }
-        switch ($message['notice_type']) {
-            case 1:
-                // 个人消息
-                $this->personal($data, $message, $uuid);
-                break;
-            case 2:
-                $this->group($data, $message, $uuid);
-                // 群聊消息
-                break;
-            case 3:
-                $this->system($data, $message, $uuid);
-                // 系统消息
-                break;
-            case 4:
-                // 广播消息
-                $fds = $this->connection->getAllFd();
-                foreach ($fds as $fd) {
-                    $this->broadcast($data, $fd);
-                }
-                break;
-            default:
-                break;
+            // 处理流消息处理，流消息暂不处理
+            if ($message['count'] === 0) {
+                $this->stream($data, $message);
+                return;
+            }
+            $uuid = null;
+            if ($origin) {
+                // 存消息数据
+                $uuid = Repository::createMessage($message);
+            }
+            switch ($message['notice_type']) {
+                case 1:
+                    // 个人消息
+                    $this->personal($data, $message, $uuid);
+                    break;
+                case 2:
+                    $this->group($data, $message, $uuid);
+                    // 群聊消息
+                    break;
+                case 3:
+                    $this->system($data, $message, $uuid);
+                    // 系统消息
+                    break;
+                case 4:
+                    // 广播消息
+                    $fds = $this->connection->getAllFd();
+                    foreach ($fds as $fd) {
+                        $this->broadcast($data, $fd);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        } catch (\Exception $exception) {
+            Log::error('Dispatcher handle message: ', [$exception]);
         }
     }
 
@@ -104,7 +107,6 @@ class Dispatcher
      */
     private function personal(string $data, array $message, string|null $uuid): void
     {
-        Log::info('personal-message', [$message]);
         if (!is_null($uuid)) {
             Repository::createMessageReceipt($uuid, $message['receiver']);
         }
@@ -113,7 +115,7 @@ class Dispatcher
             return;
         }
         if ($this->isHost($fd)) {
-            $this->server->push((int)Str::after($fd, '#'), $data, WEBSOCKET_OPCODE_BINARY);
+            $this->push($data, $fd);
         } else {
             $this->publish($fd, $data);
         }
@@ -164,7 +166,7 @@ class Dispatcher
         $fds = $this->connection->getGroupUserFd($message['receiver']);
         foreach ($fds as $fd) {
             if ($this->isHost($fd)) {
-                $this->server->push((int)Str::after($fd, '#'), $data, WEBSOCKET_OPCODE_BINARY);
+                $this->push($data, $fd);
             } else {
                 $this->publish($fd, $data);
             }
@@ -181,7 +183,7 @@ class Dispatcher
     private function broadcast(string $data, string $fd): void
     {
         if ($this->isHost($fd)) {
-            $this->server->push((int)Str::after($fd, '#'), $data, WEBSOCKET_OPCODE_BINARY);
+            $this->push($data, $fd);
         } else {
             $this->publish($fd, $data);
         }
@@ -200,6 +202,18 @@ class Dispatcher
     }
 
     /**
+     * 消息推送
+     *
+     * @param string $data
+     * @param string $fd
+     * @return void
+     */
+    private function push(string $data, string $fd): void
+    {
+        $this->server->push((int)Str::after($fd, '#'), $data, WEBSOCKET_OPCODE_BINARY);
+    }
+
+    /**
      * 消息转发
      *
      * @param string $fd
@@ -209,6 +223,6 @@ class Dispatcher
     private function publish(string $fd, string $data): void
     {
         $client = new Client();
-        $client->publish(Str::before($fd,'#'), $data);
+        $client->publish(Str::before($fd, '#'), $data);
     }
 }

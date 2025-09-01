@@ -6,6 +6,7 @@ use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class WebsocketGroupUser extends Model
 {
@@ -14,6 +15,15 @@ class WebsocketGroupUser extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $guarded = [];
+
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (!$model->uuid) {
+                $model->uuid = (string) Str::uuid();
+            }
+        });
+    }
 
     protected static string $userModelClass;
     protected static string $userForeignKey;
