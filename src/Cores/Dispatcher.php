@@ -62,12 +62,12 @@ class Dispatcher
                     $this->personal($data, $message, $uuid);
                     break;
                 case 2:
-                    $this->group($data, $message, $uuid);
                     // 群聊消息
+                    $this->group($data, $message, $uuid);
                     break;
                 case 3:
-                    $this->system($data, $message, $uuid);
                     // 系统消息
+                    $this->system($data, $message, $uuid);
                     break;
                 case 4:
                     // 广播消息
