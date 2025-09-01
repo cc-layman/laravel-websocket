@@ -19,7 +19,7 @@ composer require layman/laravel-websocket
 
 ```bash
 php artisan vendor:publish --provider="Layman\LaravelWebsocket\WebsocketServiceProvider" --tag=websocket-config
-php artisan vendor:publish --tag=websocket-view
+php artisan vendor:publish --tag=websocket-views
 ```
 
 ## 🛠️ 启动命令
