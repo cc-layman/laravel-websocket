@@ -52,7 +52,7 @@ class WebsocketServer
         $this->close();
         $this->heartbeat->start();
         $this->server->on('workerStart', function ($server, $workerId) {
-            if ($workerId === 0) {
+            if ($workerId === 0 && !$server->taskworker) {
                 $this->subscribe();
             }
         });
@@ -108,6 +108,8 @@ class WebsocketServer
         $config     = config('database.redis.default');
         $channels   = $this->config['subscribe_channels'];
         go(function () use ($dispatcher, $config, $channels) {
+            // 延迟1s执行，避免多进程模式首次建立重复
+            Coroutine::sleep(1);
             $retryCount = 0;
             while (true) {
                 try {
