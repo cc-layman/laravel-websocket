@@ -51,11 +51,11 @@ class Heartbeat
                     1,
                     1,
                     [
-                        'sender' => 'server',
+                        'sender' => Utils::sid(),
                         'receiver' => 'client',
                         'group_code' => null,
                         'notice_type' => 1,
-                        'files' => null,
+                        'files' => [],
                     ],
                     'ping'), WEBSOCKET_OPCODE_BINARY);
             }
