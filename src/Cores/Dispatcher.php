@@ -136,7 +136,7 @@ class Dispatcher
         foreach ($groupUserid as $value) {
             $fd = $this->connection->getFdByUserId($value);
             if (!is_null($uuid)) {
-                Repository::createMessageReceipt($uuid, $value, $message, empty($fd) ? 1 : 2);
+                Repository::createMessageReceipt($uuid, $value, $message, 2);
             }
             if (!empty($fd)) {
                 if ($this->isHost($fd) && $message['sender'] != $value) {
