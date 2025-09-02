@@ -76,6 +76,7 @@ class WebsocketServer
                 $server->close($request->fd);
             } else {
                 $this->connection->add($userid, $request->fd);
+                $this->dispatcher->offline($userid, $request->fd);
                 $this->heartbeat->pong($request->fd);
             }
         });
@@ -142,7 +143,7 @@ class WebsocketServer
                             break;
                         }
                         if (is_array($message) && $message[0] === 'message') {
-                            $dispatcher->handle($message[2], 0, Str::before($message[1], '-') === 'sid');
+                            $dispatcher->handle($message[2], 0, !str_starts_with($message[1], 'sid'));
                         }
                     }
                     $redis->close();

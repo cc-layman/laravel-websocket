@@ -107,10 +107,10 @@ class Dispatcher
      */
     private function personal(string $data, array $message, string|null $uuid): void
     {
-        if (!is_null($uuid)) {
-            Repository::createMessageReceipt($uuid, $message['receiver'], $message);
-        }
         $fd = $this->connection->getFdByUserId($message['receiver']);
+        if (!is_null($uuid)) {
+            Repository::createMessageReceipt($uuid, $message['receiver'], $message, empty($fd) ? 1 : 2);
+        }
         if (empty($fd)) {
             return;
         }
@@ -137,14 +137,14 @@ class Dispatcher
         }
         $groupUserid = $group->websocketGroupUser->where('status', 1)->pluck('userid');
         foreach ($groupUserid as $value) {
+            $fd = $this->connection->getFdByUserId($value);
             if (!is_null($uuid)) {
-                Repository::createMessageReceipt($uuid, $value, $message);
+                Repository::createMessageReceipt($uuid, $value, $message, empty($fd) ? 1 : 2);
             }
-        }
-        $fds = $this->connection->getGroupUserFd($groupUserid);
-        foreach ($fds as $fd) {
-            if ($this->isHost($fd) === false) {
-                $this->publish($fd, $data);
+            if (!empty($fd)) {
+                if ($this->isHost($fd) === false) {
+                    $this->publish($fd, $data);
+                }
             }
         }
     }
@@ -159,16 +159,17 @@ class Dispatcher
     private function system(string $data, array $message, string|null $uuid): void
     {
         foreach ($message['receiver'] as $value) {
+            $fd = $this->connection->getFdByUserId($value);
             if (!is_null($uuid)) {
-                Repository::createMessageReceipt($uuid, $value, $message);
+                Repository::createMessageReceipt($uuid, $value, $message, empty($fd) ? 1 : 2);
             }
-        }
-        $fds = $this->connection->getGroupUserFd($message['receiver']);
-        foreach ($fds as $fd) {
-            if ($this->isHost($fd)) {
-                $this->push($data, $fd);
-            } else {
-                $this->publish($fd, $data);
+
+            if (!empty($fd)) {
+                if ($this->isHost($fd)) {
+                    $this->push($data, $fd);
+                } else {
+                    $this->publish($fd, $data);
+                }
             }
         }
     }
@@ -205,10 +206,10 @@ class Dispatcher
      * 消息推送
      *
      * @param string $data
-     * @param string $fd
+     * @param string|int $fd
      * @return void
      */
-    private function push(string $data, string $fd): void
+    private function push(string $data, string|int $fd): void
     {
         $this->server->push((int)Str::after($fd, '#'), $data, WEBSOCKET_OPCODE_BINARY);
     }
@@ -224,5 +225,39 @@ class Dispatcher
     {
         $client = new Client();
         $client->publish(Str::before($fd, '#'), $data);
+    }
+
+    /**
+     * 离线消息处理
+     *
+     * @param string|int $userid
+     * @param int $fd
+     * @return void
+     */
+    public function offline(string|int $userid, int $fd): void
+    {
+        try {
+            $messages = Repository::getOfflineMessage($userid);
+            foreach ($messages as $message) {
+                $data = Utils::pack(
+                    $message->websocketMessage->type,
+                    $message->sn,
+                    $message->index,
+                    $message->count,
+                    [
+                        'sender' => $message->websocketMessage->sender,
+                        'group_code' => $message->websocketMessage->group_code,
+                        'files' => $message->websocketMessage->files,
+                        'notice_type' => $message->websocketMessage->notice_type,
+                        'receiver' => $message->receiver,
+                    ],
+                    $message->websocketMessage->payload
+                );
+                $this->push($data, $fd);
+                Repository::pushedUpdate($message);
+            }
+        } catch (\Exception $exception) {
+            Log::error('Dispatcher offline message: ', [$exception]);
+        }
     }
 }

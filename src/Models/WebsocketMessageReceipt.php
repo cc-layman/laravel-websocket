@@ -45,7 +45,7 @@ class WebsocketMessageReceipt extends Model
 
     public function websocketMessage(): BelongsTo
     {
-        return $this->belongsTo(WebsocketMessage::class, 'messages_uuid', 'uuid')->withDefault();
+        return $this->belongsTo(WebsocketMessage::class, 'message_uuid', 'uuid')->withDefault();
     }
 
     protected function serializeDate(DateTimeInterface $date): string

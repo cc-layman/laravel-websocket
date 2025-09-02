@@ -49,7 +49,7 @@ class WebsocketMessage extends Model
 
     public function websocketMessageReceipt(): HasMany
     {
-        return $this->hasMany(WebsocketMessageReceipt::class, 'messages_uuid', 'uuid');
+        return $this->hasMany(WebsocketMessageReceipt::class, 'message_uuid', 'uuid');
     }
 
     protected function serializeDate(DateTimeInterface $date): string

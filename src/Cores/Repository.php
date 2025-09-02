@@ -2,6 +2,7 @@
 
 namespace Layman\LaravelWebsocket\Cores;
 
+use Illuminate\Database\Eloquent\Collection;
 use Layman\LaravelWebsocket\Models\WebsocketGroup;
 use Layman\LaravelWebsocket\Models\WebsocketMessage;
 use Layman\LaravelWebsocket\Models\WebsocketMessageReceipt;
@@ -42,10 +43,39 @@ class Repository
         ]);
     }
 
-    public static function getGroup(string $groupCode)
+    /**
+     * @param string $groupCode
+     * @return Collection|null
+     */
+    public static function getGroup(string $groupCode): ?Collection
     {
         return WebsocketGroup::query()
             ->with('websocketGroupUser')
             ->find($groupCode);
+    }
+
+    /**
+     * @param string|int $receiver
+     * @return Collection
+     */
+    public static function getOfflineMessage(string|int $receiver): Collection
+    {
+        return WebsocketMessageReceipt::query()
+            ->where('pushed', 1)
+            ->where('receiver', $receiver)
+            ->with('websocketMessage')
+            ->oldest('index')
+            ->get();
+    }
+
+    /**
+     * @param $message
+     * @return void
+     */
+    public static function pushedUpdate($message): void
+    {
+        $message->update([
+            'pushed' => 2,
+        ]);
     }
 }
