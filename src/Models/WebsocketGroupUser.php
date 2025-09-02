@@ -20,7 +20,7 @@ class WebsocketGroupUser extends Model
     {
         static::creating(function ($model) {
             if (!$model->uuid) {
-                $model->uuid = (string) Str::uuid();
+                $model->uuid = (string)Str::uuid();
             }
         });
     }
@@ -37,7 +37,12 @@ class WebsocketGroupUser extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(static::$userModelClass, static::$userForeignKey, 'userid')->withDefault();
+        return $this->belongsTo(static::$userModelClass, 'userid', static::$userForeignKey)->withDefault();
+    }
+
+    public function inviter(): BelongsTo
+    {
+        return $this->belongsTo(static::$userModelClass, 'inviter', static::$userForeignKey)->withDefault();
     }
 
     protected function serializeDate(DateTimeInterface $date): string

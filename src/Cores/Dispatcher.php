@@ -131,18 +131,17 @@ class Dispatcher
      */
     private function group(string $data, array $message, string|null $uuid): void
     {
-        $group = Repository::getGroup($message['group_code']);
-        if (is_null($group)) {
-            return;
-        }
-        $groupUserid = $group->websocketGroupUser->where('status', 1)->pluck('userid');
+        $groupUsers  = Repository::getGroupUsers($message['group_code']);
+        $groupUserid = $groupUsers->pluck('userid');
         foreach ($groupUserid as $value) {
             $fd = $this->connection->getFdByUserId($value);
             if (!is_null($uuid)) {
                 Repository::createMessageReceipt($uuid, $value, $message, empty($fd) ? 1 : 2);
             }
             if (!empty($fd)) {
-                if ($this->isHost($fd) === false) {
+                if ($this->isHost($fd) && $message['sender'] != $value) {
+                    $this->push($data, $fd);
+                } else {
                     $this->publish($fd, $data);
                 }
             }

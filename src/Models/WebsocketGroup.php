@@ -24,7 +24,7 @@ class WebsocketGroup extends Model
     {
         static::creating(function ($model) {
             if (!$model->uuid) {
-                $model->uuid = (string) Str::uuid();
+                $model->uuid = (string)Str::uuid();
             }
         });
     }
@@ -41,7 +41,7 @@ class WebsocketGroup extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(static::$userModelClass, static::$userForeignKey, 'userid')->withDefault();
+        return $this->belongsTo(static::$userModelClass, 'userid', static::$userForeignKey)->withDefault();
     }
 
     public function websocketGroupUser(): HasMany

@@ -4,6 +4,7 @@ namespace Layman\LaravelWebsocket\Cores;
 
 use Illuminate\Database\Eloquent\Collection;
 use Layman\LaravelWebsocket\Models\WebsocketGroup;
+use Layman\LaravelWebsocket\Models\WebsocketGroupUser;
 use Layman\LaravelWebsocket\Models\WebsocketMessage;
 use Layman\LaravelWebsocket\Models\WebsocketMessageReceipt;
 
@@ -45,13 +46,14 @@ class Repository
 
     /**
      * @param string $groupCode
-     * @return Collection|null
+     * @return Collection
      */
-    public static function getGroup(string $groupCode): ?Collection
+    public static function getGroupUsers(string $groupCode): Collection
     {
-        return WebsocketGroup::query()
-            ->with('websocketGroupUser')
-            ->find($groupCode);
+        return WebsocketGroupUser::query()
+            ->where('group_code', $groupCode)
+            ->where('status', 1)
+            ->get();
     }
 
     /**

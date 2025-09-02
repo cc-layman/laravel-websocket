@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->uuid()->primary();
             $table->string('name')->comment('群名称');
             $table->string('userid')->comment('群主ID');
-            $table->string('description')->comment('群简介/公告');
+            $table->string('description')->nullable()->comment('群简介/公告');
             $table->timestamps();
             $table->softDeletes();
         });
