@@ -1,6 +1,6 @@
 # Laravel-WebSocket 🔐
 
-Laravel websocket 扩展包。
+Laravel websocket 分布式服务扩展包。
 
 ## ⏳ 安装准备
 
@@ -8,6 +8,7 @@ Laravel websocket 扩展包。
 2. swoole版本 >= 4.8.*
 3. predis/predis版本 *
 4. redis版本 *
+5. mysql >= 5.7
 
 ## 📦 安装
 
