@@ -67,6 +67,7 @@ class Repository
             ->where('receiver', $receiver)
             ->with('websocketMessage')
             ->oldest('index')
+            ->oldest()
             ->get();
     }
 
