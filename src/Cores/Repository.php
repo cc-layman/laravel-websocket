@@ -3,7 +3,6 @@
 namespace Layman\LaravelWebsocket\Cores;
 
 use Illuminate\Database\Eloquent\Collection;
-use Layman\LaravelWebsocket\Models\WebsocketGroup;
 use Layman\LaravelWebsocket\Models\WebsocketGroupUser;
 use Layman\LaravelWebsocket\Models\WebsocketMessage;
 use Layman\LaravelWebsocket\Models\WebsocketMessageReceipt;
@@ -32,7 +31,7 @@ class Repository
      * @param int $pushed
      * @return void
      */
-    public static function createMessageReceipt(string $uuid, string|int $receiver, array $message, int $pushed = 1): void
+    public static function createMessageReceipt(string $uuid, string|int $receiver, array $message, int $pushed = 1, bool $read = false): void
     {
         WebsocketMessageReceipt::query()->create([
             'message_uuid' => $uuid,
@@ -41,6 +40,7 @@ class Repository
             'index' => $message['index'],
             'count' => $message['count'],
             'pushed' => $pushed,
+            'read' => $read ? now() : null,
         ]);
     }
 

@@ -3,7 +3,6 @@
 namespace Layman\LaravelWebsocket\Servers;
 
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Layman\LaravelWebsocket\Cores\Dispatcher;
 use Layman\LaravelWebsocket\Cores\Connection;
 use Layman\LaravelWebsocket\Cores\Heartbeat;
