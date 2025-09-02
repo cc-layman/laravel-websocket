@@ -28,10 +28,11 @@ class WebsocketMessage extends Model
     {
         static::creating(function ($model) {
             if (!$model->uuid) {
-                $model->uuid = (string) Str::uuid();
+                $model->uuid = (string)Str::uuid();
             }
         });
     }
+
     protected static string $userModelClass;
     protected static string $userForeignKey;
 
@@ -44,7 +45,7 @@ class WebsocketMessage extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(static::$userModelClass, static::$userForeignKey, 'sender')->withDefault();
+        return $this->belongsTo(static::$userModelClass, 'sender', static::$userForeignKey)->withDefault();
     }
 
     public function websocketMessageReceipt(): HasMany
